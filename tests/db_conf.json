@@ -1,0 +1,6 @@
+{ 
+    "host": "informix",
+    "user": "amitkr",
+    "password": "",
+    "database": "test"
+}
