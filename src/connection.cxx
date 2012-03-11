@@ -181,30 +181,13 @@ nodejs_db_informix::Connection::close() {
 }
 
 std::string
-nodejs_db_informix::Connection::escape(const std::string& string) const throw(nodejs_db::Exception&) {
-    /*
-    char* buffer = new char[string.length() * 2 + 1];
-    if (buffer == NULL) {
-        throw nodejs_db::Exception("Can\'t create buffer to escape string");
-    }
-
-    informix_real_escape_string(this->connection, buffer, string.c_str(), string.length());
-
-    std::string escaped = buffer;
-    delete [] buffer;
-    return escaped;
-    */
-
-    return std::string(NULL);
+nodejs_db_informix::Connection::escape(const std::string& s) const throw(nodejs_db::Exception&) {
+    return s;
 }
 
 std::string
 nodejs_db_informix::Connection::version() const {
-    /*
-    std::string version = informix_get_server_info(this->connection);
-    return version;
-    */
-    return std::string();
+    return std::string("0.0.1");
 }
 
 ITCallbackResult
