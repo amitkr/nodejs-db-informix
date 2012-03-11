@@ -6,9 +6,12 @@ nodejs_db_informix::Connection::Connection()
       reconnect(true),
       sslVerifyServer(false),
       timeout(0),
-      writeTimeout(0),
-      connection(NULL) {
+      writeTimeout(0)
+{
     this->port = 0;
+
+    // construct connection from environment variables
+    this->connection = new ITConnection();
 }
 
 nodejs_db_informix::Connection::Connection(
@@ -67,42 +70,44 @@ void nodejs_db_informix::Connection::setWriteTimeout(const uint32_t writeTimeout
 
 bool nodejs_db_informix::Connection::isAlive() throw() {
     if (this->alive) {
-        this->alive = this->connection.IsOpen();
+        this->alive = this->connection->IsOpen();
     }
     return this->alive;
 }
 
+/**
+ * XXX: do we really need to pass dbInfo?
+ */
 bool
-nodejs_db_informix::Connection::_prepareITDBInfo() {
-    // first construct from environment variables
-    // this->dbInfo = new ITDBInfo();
+nodejs_db_informix::Connection::_prepareITDBInfo(ITDBInfo& dbInfo) {
+    // dbInfo = new ITDBInfo();
     
     // setup any custom parameters passed
     std::string db = this->getDatabase();
     if (db.c_str()
             && !db.empty()
-            && !this->dbInfo.SetDatabase(ITString(db.c_str()))) {
+            && !dbInfo.SetDatabase(ITString(db.c_str()))) {
         std::cerr << "Failed to set database " << db << std::endl;
     }
 
     std::string u = this->getUser();
     if (u.c_str()
             && !u.empty()
-            && !this->dbInfo.SetUser(ITString(u.c_str()))) {
+            && !dbInfo.SetUser(ITString(u.c_str()))) {
         std::cerr << "Failed to set username " << u << std::endl;
     }
 
     std::string h = this->getHostname();
     if (h.c_str()
             && !h.empty()
-            && !this->dbInfo.SetSystem(ITString(h.c_str()))) {
+            && !dbInfo.SetSystem(ITString(h.c_str()))) {
         std::cerr << "Failed to set hostname " << h << std::endl;
     }
 
     std::string pw = this->getPassword();
     if (pw.c_str()
             && !pw.empty()
-            && !this->dbInfo.SetPassword(ITString(pw.c_str()))) {
+            && !dbInfo.SetPassword(ITString(pw.c_str()))) {
         std::cerr << "Failed to set password " << pw << std::endl;
     }
 
@@ -111,45 +116,55 @@ nodejs_db_informix::Connection::_prepareITDBInfo() {
 
 void
 nodejs_db_informix::Connection::open() throw(nodejs_db::Exception&) {
+    // close connection if any
+    // and don't worry about the return of this close
     this->close();
 
-    if (this->dbInfo.Frozen()) {
+    if (this->connection->IsOpen()) {
         throw nodejs_db::Exception("Database connection is alreay open");
     }
 
-    if (this->connection.IsOpen()) {
+    ITDBInfo dbInfo = this->connection->GetDBInfo();
+
+    if (dbInfo.Frozen()) {
         throw nodejs_db::Exception("Database connection is alreay open");
     }
 
-    if (this->dbInfo.GetSystem().IsNull()) {
+    if (dbInfo.GetSystem().IsNull()) {
         throw nodejs_db::Exception("Which system to connect to?");
     }
 
-    if (this->dbInfo.GetDatabase().IsNull()) {
+    if (dbInfo.GetDatabase().IsNull()) {
         throw nodejs_db::Exception("No database name specified");
     }
 
-    if (this->dbInfo.GetUser().IsNull()) {
+    if (dbInfo.GetUser().IsNull()) {
         throw nodejs_db::Exception("No database username specified");
     }
 
     // prepare dbInfo
-    if (!this->_prepareITDBInfo()) {
+    if (!this->_prepareITDBInfo(dbInfo)) {
         throw nodejs_db::Exception("Could not prepare ITDBInfo");
     }
 
+    std::cout << "Connecting with " << std::endl
+        << "User: " << dbInfo.GetUser().Data() << std::endl
+        << "System: " << dbInfo.GetSystem().Data() << std::endl
+        << "Database: " << dbInfo.GetDatabase().Data() << std::endl
+        ;
+
     // setup the dbInfo
-    if (!this->connection.SetDBInfo(this->dbInfo)) {
+    if (!this->connection->SetDBInfo(dbInfo)) {
         throw nodejs_db::Exception("Could not set the ITDBINfo");
     }
 
     // open connection
-    if (!(this->alive = this->connection.Open())) {
+    if (!(this->alive = this->connection->Open())) {
         throw nodejs_db::Exception("Connection failed!");
     }
 
     // check if everything went ok.
-    if (!this->connection.IsOpen()) {
+    if (!this->connection->IsOpen()) {
         this->alive = false;
         throw nodejs_db::Exception("Cannot create Informix connection");
     }
@@ -158,7 +173,7 @@ nodejs_db_informix::Connection::open() throw(nodejs_db::Exception&) {
 void
 nodejs_db_informix::Connection::close() {
     if (this->alive) {
-        if(this->connection.Close()) {
+        if(this->connection->Close()) {
             this->alive = false;
         }
     }
@@ -211,7 +226,7 @@ _QueryErrorHandler(
 nodejs_db::Result*
 nodejs_db_informix::Connection::query(const std::string& query) const throw(nodejs_db::Exception&) {
 
-    ITQuery q(this->connection);
+    ITQuery q(*(this->connection));
 
     q.AddCallback(_QueryErrorHandler, (void*) &std::cerr);
 

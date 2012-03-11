@@ -42,11 +42,10 @@ class Connection : public nodejs_db::Connection {
         uint32_t writeTimeout;
 
     private:
-        ITConnection connection;
-        ITDBInfo dbInfo;
+        ITConnection* connection;
 
     private:
-        bool _prepareITDBInfo();
+        bool _prepareITDBInfo(ITDBInfo&);
         // ITCallBackFuncPtr _QueryErrorHandler;
         /*
         ITCallbackResult _QueryErrorHandler(
