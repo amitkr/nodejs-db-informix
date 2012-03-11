@@ -88,7 +88,7 @@ def test(tst):
     if Options.options.debug:
         test_binary = 'nodeunit_g'
     
-    Utils.exec_command(test_binary + ' tests.js')
+    Utils.exec_command(test_binary + ' tests/tests.js')
 
 def lint(lnt):
     # Bindings C++ source code
