@@ -60,7 +60,6 @@ def configure(conf):
     conf.env.append_unique('LIBS_CPPIF',  ['-L'+informixdir+'/lib/c++', '-lifc++'])
     conf.env.LINKFLAGS += conf.env.LIBS_CPPIF + conf.env.LIBS_LIBMI + conf.env.LIBS_ESQL + conf.env.LIBS_SYSTEM
     # conf.env.LINKFLAGS += conf.env.LIBS_SYSTEM + conf.env.LIBS_LIBMI + conf.env.LIBS_CPPIF + conf.env.LIBS_ESQL
-
     # conf.check_cxx(lib="", errmsg="Missing lib")
 
 def build(bld):
@@ -68,18 +67,18 @@ def build(bld):
     obj.target = 'informix_bindings'
     obj.includes = 'lib/'
     obj.userlib = 'informix'
-    obj.source = 'src/informix_bindings.cxx'
-#     obj.source = 'lib/nodejs-db/binding.cxx \
-#             lib/nodejs-db/connection.cxx \
-#             lib/nodejs-db/events.cxx \
-#             lib/nodejs-db/exception.cxx \
-#             lib/nodejs-db/query.cxx \
-#             lib/nodejs-db/result.cxx \
-#             src/connection.cxx \
-#             src/informix.cxx \
-#             src/result.cxx \
-#             src/query.cxx \
-#             src/informix_bindings.cxx'
+    # obj.source = 'src/informix_bindings.cxx'
+    obj.source = 'lib/nodejs-db/binding.cxx \
+            lib/nodejs-db/connection.cxx \
+            lib/nodejs-db/events.cxx \
+            lib/nodejs-db/exception.cxx \
+            lib/nodejs-db/query.cxx \
+            lib/nodejs-db/result.cxx \
+            src/connection.cxx \
+            src/informix.cxx \
+            src/result.cxx \
+            src/query.cxx \
+            src/informix_bindings.cxx'
 
 def package(pkg):
     print('Package');
