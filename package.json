@@ -1,0 +1,29 @@
+{
+      "name": "nodejs-db-informix"
+    , "description": "Informix database bindings for Node.JS"
+    , "keywords": ["database","db","native","binding","library","plugin","informix","csdk"]
+    , "homepage": "https://github.com/amitkr/nodejs-db-informix"
+    , "version": "0.0.1"
+    , "engines": { "node" : ">=0.6.12" }
+    , "maintainers": [{
+          "name": "Amit Kumar"
+        , "email": "amitkrdce@gmail.com"
+    }]
+    , "bugs": { "url": "http://github.com/amitkr/nodejs-db-informix/issues" }
+    , "licenses": [{ "type": "MIT" }]
+    , "repositories": [{
+          "type": "git"
+        , "url": "https://github.com/amitkr/nodejs-db-informix.git"
+    }]
+    , "main": "./nodejs-db-informix"
+    , "scripts": {
+          "install": "node-waf configure build"
+        , "preuninstall": "rm -rf build/*"
+        , "test" : "node-waf test"
+        , "doc" : "node-waf doc"
+    }
+    , "devDependencies" : {
+          "nodeunit" : "*"
+        , "nodelint" : "*"
+    }
+}
