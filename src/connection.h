@@ -1,5 +1,5 @@
-#ifndef __SRC_CONNECTION_H_INCLUDED__
-#define __SRC_CONNECTION_H_INCLUDED__
+#ifndef __INF_CONNECTION_H_INCLUDED__
+#define __INF_CONNECTION_H_INCLUDED__
 
 #include <it.h>
 #include <string>
@@ -61,4 +61,4 @@ class Connection : public nodejs_db::Connection {
 };
 }
 
-#endif  // __SRC_CONNECTION_H_INCLUDED__
+#endif  // __INF_CONNECTION_H_INCLUDED__

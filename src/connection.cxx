@@ -86,7 +86,7 @@ bool nodejs_db_informix::Connection::isAlive(bool ping) throw() {
 bool
 nodejs_db_informix::Connection::_prepareITDBInfo(ITDBInfo& dbInfo) {
     // dbInfo = new ITDBInfo();
-    
+
     // setup any custom parameters passed
     std::string db = this->getDatabase();
     if (db.c_str()
@@ -222,27 +222,30 @@ nodejs_db_informix::Connection::_testExecForIteration() const {
 
     if (!q_tmp.ExecForIteration(qry.c_str())) {
         std::cerr << "Could not execute query: " << qry << std::endl;
-    } else {
-        const ITTypeInfo *ti = q_tmp.RowType();
-        for (long cc = 0; cc < ti->ColumnCount(); ++cc) {
-            if (!ti->ColumnName(cc).IsNull()) {
-                std::cout << "Column " << cc << ": "
-                    << ti->ColumnName(cc).Data() << std::endl;
-            } else {
-                std::cerr << "Column " << cc << ": Error!" << std::endl;
-            }
-        }
-
-        ITRow *row;
-        int rc = 0;
-        while ((row = q_tmp.NextRow()) != NULL) {
-            ++rc;
-            std::cout << row->Printable() << std::endl;
-            row->Release();
-        }
-        std::cout << rc << " rows returned" << std::endl
-            << "Query: " << qry << std::endl;
+        return;
     }
+
+    const ITTypeInfo *ti = q_tmp.RowType();
+    for (long cc = 0; cc < ti->ColumnCount(); ++cc) {
+        if (!ti->ColumnName(cc).IsNull()) {
+            std::cout << "Column " << cc << ": "
+                << ti->ColumnName(cc).Data() << std::endl;
+        } else {
+            std::cerr << "Column " << cc << ": Error!" << std::endl;
+        }
+    }
+
+    ITRow *row;
+    int rc = 0;
+    while ((row = q_tmp.NextRow()) != NULL) {
+        ++rc;
+        std::cout << row->Printable() << std::endl;
+        row->Release();
+    }
+    std::cout << rc << " rows returned" << std::endl
+        << "Query: " << qry << std::endl;
+
+    return;
 }
 #endif
 
@@ -259,7 +262,7 @@ nodejs_db_informix::Connection::query(const std::string& query) const throw(node
 
     ITSet *rs = q.ExecToSet(query.c_str());
 
-    if (q.RowCount() <= 0) {
+    if (rs == NULL || q.RowCount() <= 0) {
         if (q.Warn()) {
             throw nodejs_db::Exception(
                     std::string(q.SqlState())
@@ -279,7 +282,8 @@ nodejs_db_informix::Connection::query(const std::string& query) const throw(node
         throw nodejs_db::Exception("Could not execute query");
     }
 
-    return new nodejs_db_informix::Result(rs);
+    // let the caller handle problems with q.RowType()
+    return new nodejs_db_informix::Result(rs, q.RowType());
 }
 
 /*
