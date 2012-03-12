@@ -22,7 +22,7 @@ class Connection : public nodejs_db::Connection {
         void setSslVerifyServer(const bool sslVerifyServer) throw();
         void setTimeout(const uint32_t timeout) throw();
         void setWriteTimeout(const uint32_t writeTimeout) throw();
-        bool isAlive() throw();
+        bool isAlive(bool = false) throw();
         void open() throw(nodejs_db::Exception&);
         void close();
         std::string escape(const std::string& string) const throw(nodejs_db::Exception&);
@@ -55,7 +55,9 @@ class Connection : public nodejs_db::Connection {
         );
         */
 
+#ifdef DEBUG
         void _testExecForIteration() const;
+#endif
 };
 }
 

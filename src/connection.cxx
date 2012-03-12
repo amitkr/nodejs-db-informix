@@ -68,10 +68,15 @@ void nodejs_db_informix::Connection::setWriteTimeout(const uint32_t writeTimeout
     this->writeTimeout = writeTimeout;
 }
 
-bool nodejs_db_informix::Connection::isAlive() throw() {
+bool nodejs_db_informix::Connection::isAlive(bool ping) throw() {
     if (this->alive) {
         this->alive = this->connection->IsOpen();
     }
+
+#ifdef DEBUG
+    std::cout << "IsAlive() == " << this->alive << std::endl;
+#endif
+
     return this->alive;
 }
 
@@ -147,11 +152,13 @@ nodejs_db_informix::Connection::open() throw(nodejs_db::Exception&) {
         throw nodejs_db::Exception("Could not prepare ITDBInfo");
     }
 
+#ifdef DEBUG
     std::cout << "Connecting with " << std::endl
         << "User: " << dbInfo.GetUser().Data() << std::endl
         << "System: " << dbInfo.GetSystem().Data() << std::endl
         << "Database: " << dbInfo.GetDatabase().Data() << std::endl
         ;
+#endif
 
     // setup the dbInfo
     if (!this->connection->SetDBInfo(dbInfo)) {
@@ -207,6 +214,7 @@ _QueryErrorHandler(
 }
 
 
+#ifdef DEBUG
 void
 nodejs_db_informix::Connection::_testExecForIteration() const {
     ITQuery q_tmp(*(this->connection));
@@ -236,10 +244,14 @@ nodejs_db_informix::Connection::_testExecForIteration() const {
             << "Query: " << qry << std::endl;
     }
 }
+#endif
 
 nodejs_db::Result*
 nodejs_db_informix::Connection::query(const std::string& query) const throw(nodejs_db::Exception&) {
+
+#ifdef DEBUG
     this->_testExecForIteration();
+#endif
 
     ITQuery q(*(this->connection));
 
