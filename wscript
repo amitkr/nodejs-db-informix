@@ -18,7 +18,7 @@ out = 'build'
 
 def set_options(opt):
     opt.tool_options('compiler_cxx')
-    opt.add_option('--debug', action='store_true', help='Run tests with nodeunit_g')
+    opt.add_option('--debug', action='store_true', help='Compile with -DDEBUG. Run tests with nodeunit_g')
     opt.add_option('--warn', action='store_true', help='Enable extra -W* compiler flags')
 
 def configure(conf):
@@ -26,15 +26,6 @@ def configure(conf):
     conf.check_tool('node_addon')
     
     conf.env.append_unique('THREADLIB', ['POSIX'])
-
-    # Enables all the warnings that are easy to avoid
-    conf.env.append_unique('CXXFLAGS', ['-Wall'])
-
-    if Options.options.warn:
-        # Extra warnings
-        conf.env.append_unique('CXXFLAGS', ['-Wextra'])
-        # Extra warnings, gcc 4.4
-        conf.env.append_unique('CXXFLAGS', ['-Wconversion', '-Wshadow', '-Wsign-conversion', '-Wunreachable-code', '-Wredundant-decls', '-Wcast-qual'])
 
     # Informix flags and libraries
     esql = conf.find_program('esql', var='ESQL', mandatory=True)
@@ -45,11 +36,28 @@ def configure(conf):
     if informixdir == "":
         informixdir = '/opt/informix'
 
+    # Enables all the warnings that are easy to avoid
+    conf.env.append_unique('CXXFLAGS', ['-Wall'])
+
+    if Options.options.warn:
+        # Extra warnings
+        conf.env.append_unique('CXXFLAGS', ['-Wextra'])
+        # Extra warnings, gcc 4.4
+        conf.env.append_unique('CXXFLAGS', ['-Wconversion', '-Wshadow', '-Wsign-conversion', '-Wunreachable-code', '-Wredundant-decls', '-Wcast-qual'])
+
+    # include paths
     conf.env.append_unique('INCLUDES', ['-I'+informixdir+'/incl/dmi', '-I'+informixdir+'/incl', '-I'+informixdir+'/incl/esql', '-I'+informixdir+'/incl/c++', '-Ilib/'])
 
+    # defines
     conf.env.append_unique('CDEFS',    ['-DLINUX', '-DIT_HAS_DISTINCT_LONG_DOUBLE', '-DIT_COMPILER_HAS_LONG_LONG', '-DIT_DLLIB', '-DMITRACE_OFF', '-fPIC'])
+
+    if Options.options.debug:
+        conf.env.append_unique('CDEFS', ['-DDEBUG'])
+
+    # cflags
     conf.env.append_unique('CFLAGS',   ['-g', '-fsigned-char'])
     conf.env.CFLAGS += conf.env.CDEFS
+
     conf.env.CXXFLAGS += conf.env.CFLAGS + conf.env.INCLUDES
 
     conf.env.append_unique('LIBS_SYSTEM', ['-lpthread', '-lm', '-ldl', '-lcrypt', '-lnsl'])
