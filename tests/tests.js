@@ -1,4 +1,4 @@
-/* Escape & Query building tests */
+/* tests */
 
 var settings = JSON.parse(require('fs').readFileSync('./tests/db_conf.json','utf8'));
 
