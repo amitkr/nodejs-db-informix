@@ -227,6 +227,8 @@ nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti) throw(nodej
             this->columns.push_back(col);
             this->columnNames.push_back(n);
         }
+
+        this->empty = false;
     }
 
     this->nextRow = this->row();
@@ -254,7 +256,9 @@ nodejs_db_informix::Result::Result(ITSet* rs) throw(nodejs_db::Exception&)
 
     // construct the column name, values from first row
 
+    this->empty = false;
     this->resultSet = rs;
+    this->nextRow = this->row();
 }
 
 nodejs_db_informix::Result::~Result() {
@@ -289,16 +293,17 @@ nodejs_db_informix::Result::next() throw(nodejs_db::Exception&) {
 }
 
 unsigned long* nodejs_db_informix::Result::columnLengths() throw(nodejs_db::Exception&) {
-    return NULL;
+    return this->colLengths;
 }
 
 std::vector<std::string>*
 nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
-    std::vector<std::string> r;
+    std::vector<std::string> *r = new std::vector<std::string>();
 
     ITValue *v = this->resultSet->Fetch();
     if (v == NULL) {
-        throw nodejs_db::Exception("Cannot fetch ITValue for next row");
+        // throw nodejs_db::Exception("Cannot fetch ITValue for next row");
+        return NULL;
     }
 
     ITRow *row;
@@ -306,18 +311,21 @@ nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
         throw nodejs_db::Exception("Couldn't fetch ITRow for next row");
     } else {
         long nCols = row->NumColumns();
+        this->colLengths = new unsigned long[nCols];
         for (long i = 0; i < nCols; ++i) {
             ITValue *cv = row->Column(i);
-            if (cv.IsNull()) {
+            if (cv->IsNull()) {
                 // append null
-                r.push_back("null");
+                r->push_back("null");
+                this->colLengths[i] = strlen("null");
             } else {
-                r.push_back(cv.Printable().Data());
+                r->push_back(cv->Printable().Data());
+                this->colLengths[i] = cv->Printable().Length();
             }
         }
     }
 
-    return &r;
+    return r;
 }
 
 uint64_t nodejs_db_informix::Result::index() const throw(std::out_of_range&) {
@@ -332,6 +340,11 @@ nodejs_db_informix::Result::column(uint16_t i) const throw(std::out_of_range&) {
     if (i >= this->totalColumns) {
         throw std::out_of_range("Wrong column index");
     }
+
+#ifdef DEBUG
+    std::cout << *(this->columns[i]) << std::endl;
+#endif
+
     return this->columns[i];
 }
 
@@ -359,7 +372,7 @@ uint64_t nodejs_db_informix::Result::count() const throw(nodejs_db::Exception&) 
 }
 
 bool nodejs_db_informix::Result::isBuffered() const throw() {
-    return true;
+    return false;
 }
 
 bool nodejs_db_informix::Result::isEmpty() const throw() {

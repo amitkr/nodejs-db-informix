@@ -8,6 +8,8 @@
 #include "nodejs-db/exception.h"
 #include "nodejs-db/result.h"
 
+#include <ostream>
+
 namespace nodejs_db_informix {
 class Result : public nodejs_db::Result {
     public:
@@ -19,6 +21,17 @@ class Result : public nodejs_db::Result {
                 std::string getName() const;
                 std::string getTypeName() const;
                 nodejs_db::Result::Column::type_t getType() const;
+
+                friend std::ostream& operator<< (std::ostream &o, const Column &c) {
+                    o << "Column { name: " << c.name
+                        << ", typeName: " << c.typeName
+                        << ", type: " << c.type
+                        << ", binary: " << c.binary
+                        << "}"
+                        ;
+
+                    return o;
+                }
 
             protected:
                 std::string name;
@@ -32,7 +45,7 @@ class Result : public nodejs_db::Result {
         ~Result();
         void release() throw();
         bool hasNext() const throw();
-        std::vector<std::string> next() throw(nodejs_db::Exception&);
+        std::vector<std::string>* next() throw(nodejs_db::Exception&);
         unsigned long* columnLengths() throw(nodejs_db::Exception&);
         uint64_t index() const throw(std::out_of_range&);
         Column* column(uint16_t i) const throw(std::out_of_range&);
@@ -47,11 +60,12 @@ class Result : public nodejs_db::Result {
     protected:
         std::vector<Column*> columns;
         std::vector<std::string> columnNames;
+        unsigned long *colLengths;
         uint16_t totalColumns;
         uint64_t rowNumber;
         bool empty;
 
-        std::vector<std::string> row() throw(nodejs_db::Exception&);
+        std::vector<std::string>* row() throw(nodejs_db::Exception&);
         void free() throw();
 
     private:
