@@ -4,6 +4,9 @@ var settings = JSON.parse(require('fs').readFileSync('./tests/db_conf.json','utf
 
 var informix = require("../nodejs-db-informix");
 
+/*
+ * \c connection
+ */
 var c = new informix.Database(settings);
 c.connect(function(err) {
     if (err) {
