@@ -1,7 +1,7 @@
 
 /*
- * \ee event emitter
- * \ib informix bindings
+ * @public {EventEmitter} ee event emitter
+ * @public {informix_bindings} ib informix bindings
  */
 var ee = require('events').EventEmitter,
     ib;
@@ -14,8 +14,10 @@ try {
 }
 
 /*
- * \t target object
- * \s source object
+ * @function extend(t, s) Extends the target class @c t with all the prototypes of
+ * class @c s.
+ * @param {Object} t target object
+ * @param {Object} s source object
  */
 function extend(t, s) {
     for (var k in s.prototype) {
@@ -26,7 +28,7 @@ function extend(t, s) {
 }
 
 /*
- * \bee base event emitter
+ * @private {BaseEventEmitter} bee base event emitter
  */
 var bee = extend(function() {}, ee);
 bee.prototype.emit = function() {
@@ -57,7 +59,7 @@ bee.prototype.emit = function() {
 }
 
 exports.Query = extend(ib.Query, bee);
-exports.Database = extend(ib.Informix, bee);
+exports.Binding = extend(ib.Informix, bee);
 
 /*
 console.log('Query: ');
