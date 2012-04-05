@@ -2,8 +2,7 @@
 # encoding: utf-8
 
 #
-# $Header: $
-# Copyright(c) by Amit Kumar
+# Report bugs to Amit Kumar (amitkr [at] rocketmail.com)
 #
 
 import Options, Utils
