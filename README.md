@@ -42,15 +42,18 @@ Build
 =====
 node-waf distclean configure build
 
+
 Debug
 -----
 node-waf --debug distclean configure build
+
 
 Test
 ====
 node-waf test
 -or-
 nodejs tests/tests.js
+
 
 License
 =======
