@@ -18,7 +18,7 @@
           "name": "Amit Kumar"
         , "email": "amitkr@rocketmail.com"
     }]
-    , "bugs": { 
+    , "bugs": {
           "url": "http://github.com/amitkr/nodejs-db-informix/issues"
         , email: "amikr@rocketmail.com"
     }
