@@ -5,8 +5,8 @@ Pre-req (Setup and configure Informix)
 ======================================
 Download and install informix (supported version 11.5).
 Download and install CSDK.
-It is assumed that informix is installed at /opt/informix, adjust approriately.
-(by default IBM installs informix at /opt/IBM/informix)
+It is assumed that informix is installed at `/opt/informix`, adjust approriately.
+(by default IBM installs informix at `/opt/IBM/informix`)
 
 
 ```bash
@@ -40,19 +40,19 @@ $ dbaccess sysmaster -
 
 Build
 =====
-node-waf distclean configure build
+`node-waf distclean configure build`
 
 
 Debug
 -----
-node-waf --debug distclean configure build
+`node-waf --debug distclean configure build`
 
 
 Test
 ====
-node-waf test
+`node-waf test`
 -or-
-nodejs tests/tests.js
+`nodejs tests/tests.js`
 
 
 License
