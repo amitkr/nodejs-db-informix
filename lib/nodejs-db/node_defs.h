@@ -156,4 +156,7 @@ do {                                                                      \
         THROW_EXCEPTION("Option \"" #KEY "\" must be a valid function") \
     }
 
+#define DEBUG_LOG_FUNC \
+    std::cout << "Function : " << __func__ << std::endl
+
 #endif  // __NODE_DEFS_H_INCLUDED__

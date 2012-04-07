@@ -279,7 +279,7 @@ bool nodejs_db_informix::Result::hasNext() const throw() {
     return (this->nextRow != NULL);
 }
 
-std::vector<std::string>*
+std::vector<std::string*>*
 nodejs_db_informix::Result::next() throw(nodejs_db::Exception&) {
     if (this->nextRow == NULL) {
         return NULL;
@@ -296,9 +296,9 @@ unsigned long* nodejs_db_informix::Result::columnLengths() throw(nodejs_db::Exce
     return this->colLengths;
 }
 
-std::vector<std::string>*
+std::vector<std::string*>*
 nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
-    std::vector<std::string> *r = new std::vector<std::string>();
+    std::vector<std::string*> *r = new std::vector<std::string*>();
 
     ITValue *v = this->resultSet->Fetch();
     if (v == NULL) {
@@ -316,10 +316,10 @@ nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
             ITValue *cv = row->Column(i);
             if (cv->IsNull()) {
                 // append null
-                r->push_back("null");
+                r->push_back(new std::string("null"));
                 this->colLengths[i] = strlen("null");
             } else {
-                r->push_back(cv->Printable().Data());
+                r->push_back(new std::string(cv->Printable().Data()));
                 this->colLengths[i] = cv->Printable().Length();
             }
         }

@@ -587,6 +587,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Sql(const v8::Arguments& args) {
 }
 
 v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
+    DEBUG_LOG_FUNC;
     v8::HandleScope scope;
 
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
@@ -660,12 +661,18 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
 }
 
+/**
+ * eioExecute is responsible for executing the function and creating data. The
+ * data is then passed to eioExecuteFinished callback function for return
+ */
 #if NODE_VERSION_AT_LEAST(0, 5, 0)
 void
 #else
 int
 #endif
 nodejs_db::Query::eioExecute(eio_req* eioRequest) {
+    DEBUG_LOG_FUNC;
+
     execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
     assert(request);
 
@@ -690,7 +697,7 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
             while (request->result->hasNext()) {
                 unsigned long* columnLengths = request->result->columnLengths();
                 assert(columnLengths);
-                std::vector<std::string> *currentRow = request->result->next();
+                std::vector<std::string*> *currentRow = request->result->next();
                 assert(currentRow);
 
                 if (!currentRow) {
@@ -711,15 +718,17 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
                         throw nodejs_db::Exception("Could not create buffer for column lengths");
                     }
 
-                    row->columns = new std::vector<std::string>(size_t(request->columnCount));
+                    row->columns = new std::vector<std::string*>(size_t(request->columnCount));
                     if (row->columns == NULL) {
                         throw nodejs_db::Exception("Could not create buffer for columns");
                     }
 
+                    std::cout << std::endl;
                     for (uint16_t i = 0; i < request->columnCount; ++i) {
                         std::cout
-                            << "ColumnLength: " << i
-                            << " Column: " << currentRow->at(i)
+                            << "Column: " << i
+                            << " Length: " << columnLengths[i]
+                            << " Value: " << *(currentRow->at(i))
                             << std::endl;
                         row->columnLengths[i] = columnLengths[i];
                         row->columns->push_back(currentRow->at(i));
@@ -745,9 +754,8 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
 }
 
 int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
+    DEBUG_LOG_FUNC;
     v8::HandleScope scope;
-
-    std::cout << "eioExecuteFinished: ";
 
     execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
     assert(request);
@@ -855,6 +863,7 @@ int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
  * @param[in,out] execute_request_t* request Request object
  */
 void nodejs_db::Query::executeAsync(execute_request_t* request) {
+    DEBUG_LOG_FUNC;
     bool freeAll = true;
     std::cout << "executeAsync: " << std::endl;
     try {
@@ -980,6 +989,7 @@ nodejs_db::Result* nodejs_db::Query::execute() const throw(nodejs_db::Exception&
 }
 
 void nodejs_db::Query::freeRequest(execute_request_t* request, bool freeAll) {
+    DEBUG_LOG_FUNC;
     /*
     if (request->rows != NULL) {
         for (std::vector<row_t*>::iterator iterator = request->rows->begin(), end = request->rows->end(); iterator != end; ++iterator) {
@@ -1138,6 +1148,7 @@ v8::Handle<v8::Value> nodejs_db::Query::set(const v8::Arguments& args) {
 }
 
 std::string nodejs_db::Query::fieldName(v8::Local<v8::Value> v) const throw(nodejs_db::Exception&) {
+    DEBUG_LOG_FUNC;
     std::string buffer;
 
     if (v->IsObject()) {
@@ -1208,6 +1219,7 @@ std::string nodejs_db::Query::fieldName(v8::Local<v8::Value> v) const throw(node
 }
 
 std::string nodejs_db::Query::tableName(v8::Local<v8::Value> value, bool escape) const throw(nodejs_db::Exception&) {
+    DEBUG_LOG_FUNC;
     std::string buffer;
 
     if (value->IsArray()) {
@@ -1253,6 +1265,7 @@ std::string nodejs_db::Query::tableName(v8::Local<v8::Value> value, bool escape)
 }
 
 v8::Handle<v8::Value> nodejs_db::Query::addCondition(const v8::Arguments& args, const char* separator) {
+    DEBUG_LOG_FUNC;
     ARG_CHECK_STRING(0, conditions);
     ARG_CHECK_OPTIONAL_ARRAY(1, values);
 
@@ -1271,7 +1284,12 @@ v8::Handle<v8::Value> nodejs_db::Query::addCondition(const v8::Arguments& args, 
     return args.This();
 }
 
-v8::Local<v8::Object> nodejs_db::Query::row(nodejs_db::Result* result, row_t* currentRow) const {
+v8::Local<v8::Object>
+nodejs_db::Query::row(
+    nodejs_db::Result* result,
+    row_t* currentRow
+) const {
+    DEBUG_LOG_FUNC;
     v8::Local<v8::Object> row = v8::Object::New();
 
     std::cout
@@ -1286,8 +1304,8 @@ v8::Local<v8::Object> nodejs_db::Query::row(nodejs_db::Result* result, row_t* cu
             << "Column: " << j
             << ", Name: " << currentColumn->getName().c_str();
 
-        if (currentRow->columns->at(j).c_str() != NULL) {
-            const char* currentValue = currentRow->columns->at(j).c_str();
+        if (currentRow->columns->at(j) != NULL) {
+            const char* currentValue = currentRow->columns->at(j)->c_str();
             unsigned long currentLength = currentRow->columnLengths[j];
             std::cout
                 << ", Value: " << currentValue
@@ -1414,7 +1432,10 @@ v8::Local<v8::Object> nodejs_db::Query::row(nodejs_db::Result* result, row_t* cu
     return row;
 }
 
-std::vector<std::string::size_type> nodejs_db::Query::placeholders(std::string* parsed) const throw(nodejs_db::Exception&) {
+std::vector<std::string::size_type>
+nodejs_db::Query::placeholders(std::string* parsed)
+const throw(nodejs_db::Exception&) {
+    DEBUG_LOG_FUNC;
     std::string query = this->sql.str();
     std::vector<std::string::size_type> positions;
     char quote = 0;
@@ -1449,7 +1470,10 @@ std::vector<std::string::size_type> nodejs_db::Query::placeholders(std::string* 
     return positions;
 }
 
-std::string nodejs_db::Query::parseQuery() const throw(nodejs_db::Exception&) {
+std::string
+nodejs_db::Query::parseQuery()
+const throw(nodejs_db::Exception&) {
+    DEBUG_LOG_FUNC;
     std::string parsed;
     std::vector<std::string::size_type> positions = this->placeholders(&parsed);
 
@@ -1468,7 +1492,14 @@ std::string nodejs_db::Query::parseQuery() const throw(nodejs_db::Exception&) {
     return parsed;
 }
 
-std::string nodejs_db::Query::value(v8::Local<v8::Value> v, bool inArray, bool escape, int precision) const throw(nodejs_db::Exception&) {
+std::string
+nodejs_db::Query::value(
+    v8::Local<v8::Value> v,
+    bool inArray,
+    bool escape,
+    int precision
+) const throw(nodejs_db::Exception&) {
+    DEBUG_LOG_FUNC;
     std::ostringstream currentStream;
 
     if (v->IsNull()) {

@@ -30,9 +30,12 @@ c.on('error', function(error) {
     console.log(settings);
     console.log("isConnected() == " + c.isConnected());
 
+    var q;
+
     // console.log(c);
     // var q = "select * from customer order by customer_num";
-    var q = "select * from units order by unit_name";
+    /*
+    q = "select * from units order by unit_name";
     var rs = this.query(q
         , []
         , {
@@ -46,6 +49,7 @@ c.on('error', function(error) {
                 console.log(r);
             }
         }).execute();
+    */
 
     /*
     var rs = c.query().select("*").from("foo").execute({
@@ -54,10 +58,11 @@ c.on('error', function(error) {
         }
        , async : false
     });
-    */
+
     console.log('Result set: ');
     console.log(rs);
 
+    */
 
     q = this.query(
           ""
@@ -72,8 +77,14 @@ c.on('error', function(error) {
                 console.log("XXXX");
                 console.log(r);
             }
+            , error: function(e) {
+                console.log(e);
+            }
+            , success: function(s) {
+                console.log(s);
+            }
         }
-        ).select("*").from("units", false).orderby("unit_name").execute();
+        ).select("*").from("systables", false).where("owner='amitkr'").orderby("tabid").execute();
 });
 
 
