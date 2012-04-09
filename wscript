@@ -30,7 +30,7 @@ def configure(conf):
     conf.env.append_unique('THREADLIB', ['POSIX'])
 
     # Informix flags and libraries
-    esql = conf.find_program('esql', var='ESQL', mandatory=True)
+    # esql = conf.find_program('esql', var='ESQL', mandatory=True)
 
     informixdir = environ['INFORMIXDIR']
     # assume informix is installed in /opt/informix if environment variable is
