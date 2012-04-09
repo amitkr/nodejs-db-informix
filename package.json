@@ -13,7 +13,9 @@
     ]
     , "homepage": "https://github.com/amitkr/nodejs-db-informix"
     , "version": "0.0.2"
-    , "engines": { "node" : ">=0.6.12" }
+    , "engines": {
+        "node" : ">=0.6.12"
+    }
     , "maintainers": [{
           "name": "Amit Kumar"
         , "email": "amitkr@rocketmail.com"
@@ -37,5 +39,12 @@
     , "devDependencies" : {
           "nodeunit" : "*"
         , "nodelint" : "*"
+    }
+    , "dependencies": {}
+    , "optionalDependencies": {}
+    , "author": "Amit Kumar <amitkr@rocketmail.com> (http://amitkr.net)"
+    , "repository": {
+        "type": "git",
+        "url": "git://github.com/amitkr/nodejs-db-informix.git"
     }
 }
