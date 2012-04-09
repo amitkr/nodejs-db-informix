@@ -641,7 +641,9 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
     query->sql.clear();
     query->sql << sql;
 
+#ifdef DEBUG
     std::cout << "SQL: " << sql << std::endl;
+#endif
 
     request->context = v8::Persistent<v8::Object>::New(args.This());
     request->query = query;
@@ -681,9 +683,13 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
         request->result = request->query->execute();
         request->query->connection->unlock();
 
+#ifdef DEBUG
         std::cout << "Result is ";
+#endif
         if ((request->result != NULL) && !request->result->isEmpty()) {
+#ifdef DEBUG
             std::cout << "not empty or null ";
+#endif
 
             // allocate a new row_t
             request->rows = new std::vector<row_t*>();
@@ -723,13 +729,17 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
                         throw nodejs_db::Exception("Could not create buffer for columns");
                     }
 
+#ifdef DEBUG
                     std::cout << std::endl;
+#endif
                     for (uint16_t i = 0; i < request->columnCount; ++i) {
+#ifdef DEBUG
                         std::cout
                             << "Column: " << i
                             << " Length: " << columnLengths[i]
                             << " Value: " << *(currentRow->at(i))
                             << std::endl;
+#endif
                         row->columnLengths[i] = columnLengths[i];
                         row->columns->push_back(currentRow->at(i));
                     }
@@ -741,7 +751,9 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
             if (!request->result->isBuffered()) {
                 request->result->release();
             }
+#ifdef DEBUG
             std::cout << std::endl;
+#endif
         }
     } catch(const nodejs_db::Exception& exception) {
         request->query->connection->unlock();
@@ -760,16 +772,22 @@ int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
     execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
     assert(request);
 
+#ifdef DEBUG
     std::cout << "result ";
+#endif
     if (request->error == NULL && request->result != NULL) {
+#ifdef DEBUG
         std::cout << "is not null";
+#endif
 
         v8::Local<v8::Value> argv[3];
         argv[0] = v8::Local<v8::Value>::New(v8::Null());
 
         bool isEmpty = request->result->isEmpty();
         if (!isEmpty) {
+#ifdef DEBUG
             std::cout << ", is not empty";
+#endif
 
             assert(request->rows);
 
@@ -853,7 +871,9 @@ int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
 
     Query::freeRequest(request);
 
+#ifdef DEBUG
     std::cout << std::endl;
+#endif
 
     return 0;
 }
@@ -864,23 +884,30 @@ int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
  */
 void nodejs_db::Query::executeAsync(execute_request_t* request) {
     DEBUG_LOG_FUNC;
+
     bool freeAll = true;
-    std::cout << "executeAsync: " << std::endl;
+
     try {
         this->connection->lock();
         request->result = this->execute();
         this->connection->unlock();
 
+#ifdef DEBUG
         std::cout << "result: ";
+#endif
 
         if (request->result != NULL) {
+#ifdef DEBUG
             std::cout << " is not null ";
+#endif
             v8::Local<v8::Value> argv[3];
             argv[0] = v8::Local<v8::Value>::New(v8::Null());
 
             bool isEmpty = request->result->isEmpty();
             if (!isEmpty) {
+#ifdef DEBUG
                 std::cout << ", is not empty ";
+#endif
                 request->columnCount = request->result->columnCount();
 
                 v8::Local<v8::Array> columns = v8::Array::New(request->columnCount);
@@ -891,15 +918,19 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                     rows = v8::Array::New();
                 }
 
+#ifdef DEBUG
                 std::cout << ", columnCount " << request->columnCount << std::endl;
+#endif
                 for (uint16_t i = 0; i < request->columnCount; i++) {
                     nodejs_db::Result::Column *currentColumn = request->result->column(i);
 
+#ifdef DEBUG
                     std::cout
                         << " Name: " << currentColumn->getName()
                         << " Type: " << currentColumn->getType()
                         << " IsBinary: " << currentColumn->isBinary()
                         << std::endl;
+#endif
 
                     v8::Local<v8::Object> column = v8::Object::New();
                     column->Set(v8::String::New("name"), v8::String::New(currentColumn->getName().c_str()));
@@ -911,17 +942,23 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                 row_t row;
                 uint64_t index = 0;
 
+#ifdef DEBUG
                 std::cout << "Rows" << std::endl;
+#endif
                 while (request->result->hasNext()) {
+#ifdef DEBUG
                     std::cout << "Row: " << index;
+#endif
 
                     row.columnLengths = (unsigned long*) request->result->columnLengths();
                     row.columns = request->result->next();
 
+#ifdef DEBUG
                     if (row.columns) {
                         std::cout << ", Columns: " << row.columns->size()
                             << std::endl;
                     }
+#endif
 
                     v8::Local<v8::Object> jsRow = this->row(request->result, &row);
                     v8::Local<v8::Value> eachArgv[3];
@@ -942,7 +979,9 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                 argv[1] = rows;
                 argv[2] = columns;
             } else {
+#ifdef DEBUG
                 std::cout << ", is empty";
+#endif
                 v8::Local<v8::Object> result = v8::Object::New();
                 result->Set(v8::String::New("id"), v8::Number::New(request->result->insertId()));
                 result->Set(v8::String::New("affected"), v8::Number::New(request->result->affectedCount()));
@@ -950,7 +989,9 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                 argv[1] = result;
             }
 
+#ifdef DEBUG
             std::cout << std::endl;
+#endif
 
             this->Emit("success", !isEmpty ? 2 : 1, &argv[1]);
 
@@ -1292,32 +1333,40 @@ nodejs_db::Query::row(
     DEBUG_LOG_FUNC;
     v8::Local<v8::Object> row = v8::Object::New();
 
+#ifdef DEBUG
     std::cout
             << std::endl
             ;
+#endif
 
     for (uint16_t j = 0, limitj = result->columnCount(); j < limitj; j++) {
         nodejs_db::Result::Column* currentColumn = result->column(j);
         v8::Local<v8::Value> v;
 
+#ifdef DEBUG
         std::cout
             << "Column: " << j
             << ", Name: " << currentColumn->getName().c_str();
+#endif
 
         if (currentRow->columns->at(j) != NULL) {
             const char* currentValue = currentRow->columns->at(j)->c_str();
             unsigned long currentLength = currentRow->columnLengths[j];
+#ifdef DEBUG
             std::cout
                 << ", Value: " << currentValue
                 << ", length: " << currentLength
                 ;
+#endif
 
             if (this->cast) {
 
                 nodejs_db::Result::Column::type_t columnType = currentColumn->getType();
 
+#ifdef DEBUG
                 std::cout
                     << ", columnType: " << columnType;
+#endif
 
                 switch (columnType) {
                     case nodejs_db::Result::Column::BOOL:
@@ -1422,10 +1471,14 @@ nodejs_db::Query::row(
                 v = v8::String::New(currentValue, currentLength);
             }
         } else {
+#ifdef DEBUG
             std::cout << " is Null";
+#endif
             v = v8::Local<v8::Value>::New(v8::Null());
         }
+#ifdef DEBUG
         std::cout << std::endl;
+#endif
         row->Set(v8::String::New(currentColumn->getName().c_str()), v);
     }
 

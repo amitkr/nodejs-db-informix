@@ -40,8 +40,8 @@ bee.prototype.emit = function() {
         }
     }
     */
-    console.log("Arguments:");
-    console.log(arguments);
+    // console.log("Arguments:");
+    // console.log(arguments);
     var type = arguments[0];
     if (type === 'error'
             && (!this._events

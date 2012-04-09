@@ -10,7 +10,7 @@ from os import unlink, symlink, chdir, environ
 from os.path import exists
 
 APPNAME = 'nodejs-db-informix'
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 top = '.'
 out = 'build'
@@ -18,6 +18,9 @@ out = 'build'
 def set_options(opt):
     opt.tool_options('compiler_cxx')
     opt.add_option('--debug', action='store_true', help='Compile with -DDEBUG. Run tests with nodeunit_g')
+    opt.add_option('--dev', action='store_true', help='Compile with -DDEV')
+    opt.add_option('--info', action='store_true', help='Compile with -DINFO')
+    opt.add_option('--error', action='store_true', help='Compile with -DERROR')
     opt.add_option('--warn', action='store_true', help='Enable extra -W* compiler flags')
 
 def configure(conf):
@@ -52,6 +55,15 @@ def configure(conf):
 
     if Options.options.debug:
         conf.env.append_unique('CDEFS', ['-DDEBUG'])
+
+    if Options.options.dev:
+        conf.env.append_unique('CDEFS', ['-DDEV'])
+
+    if Options.options.info:
+        conf.env.append_unique('CDEFS', ['-DINFO'])
+
+    if Options.options.error:
+        conf.env.append_unique('CDEFS', ['-DERROR'])
 
     # cflags
     conf.env.append_unique('CFLAGS',   ['-g', '-fsigned-char'])

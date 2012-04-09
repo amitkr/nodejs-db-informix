@@ -27,7 +27,7 @@ class Result : public nodejs_db::Result {
                         << ", typeName: " << c.typeName
                         << ", type: " << c.type
                         << ", binary: " << c.binary
-                        << "}"
+                        << " }"
                         ;
 
                     return o;

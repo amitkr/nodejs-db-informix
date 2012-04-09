@@ -55,7 +55,7 @@ class Connection : public nodejs_db::Connection {
         );
         */
 
-#ifdef DEBUG
+#ifdef DEV
         void _testExecForIteration() const;
 #endif
 };

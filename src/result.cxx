@@ -341,7 +341,7 @@ nodejs_db_informix::Result::column(uint16_t i) const throw(std::out_of_range&) {
         throw std::out_of_range("Wrong column index");
     }
 
-#ifdef DEBUG
+#ifdef DEV
     std::cout << *(this->columns[i]) << std::endl;
 #endif
 

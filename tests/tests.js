@@ -20,7 +20,7 @@ c.on('error', function(error) {
     console.log("Error: ");
     console.log(error);
 }).on('ready', function(server) {
-    console.log("Connected to ");
+    console.log("Connection ready to ");
     console.log(server);
 }).connect(function(err) {
     if (err) {
@@ -30,10 +30,10 @@ c.on('error', function(error) {
     console.log(settings);
     console.log("isConnected() == " + c.isConnected());
 
-    var q;
+    var q, rs;
 
     // console.log(c);
-    // var q = "select * from customer order by customer_num";
+    // q = "select * from customer order by customer_num";
     /*
     q = "select * from units order by unit_name";
     var rs = this.query(q
@@ -52,7 +52,7 @@ c.on('error', function(error) {
     */
 
     /*
-    var rs = c.query().select("*").from("foo").execute({
+    rs = c.query().select("*").from("foo").execute({
         start: function (q) {
             console.log (q);
         }
@@ -64,14 +64,14 @@ c.on('error', function(error) {
 
     */
 
-    q = this.query(
+    rs = this.query(
           ""
         , []
         , {
             start: function(q) {
                 console.log(q);
             }
-            , async: true
+            , async: false
             , cast: true
             , each: function(r) {
                 console.log("XXXX");
@@ -85,6 +85,10 @@ c.on('error', function(error) {
             }
         }
         ).select("*").from("systables", false).where("owner='amitkr'").orderby("tabid").execute();
+
+    console.log('Result set: ');
+    console.log(rs);
+
 });
 
 
