@@ -15,6 +15,9 @@ void nodejs_db_informix::Query::Init(v8::Handle<v8::Object> target) {
     target->Set(v8::String::NewSymbol("Query"), constructorTemplate->GetFunction());
 }
 
+/**
+ * Constructor Template
+ */
 v8::Handle<v8::Value> nodejs_db_informix::Query::New(const v8::Arguments& args) {
     v8::HandleScope scope;
 

@@ -64,27 +64,32 @@ c.on('error', function(error) {
 
     */
 
-    rs = this.query(
-          ""
-        , []
-        , {
-            start: function(q) {
-                console.log(q);
+    rs = this
+        .query(
+              ""
+            , []
+            , function () {
+                console.log('CALLBACK:');
+                console.log(arguments);
             }
-            , async: false
-            , cast: true
-            , each: function(r) {
-                console.log("XXXX");
-                console.log(r);
+            , {
+                start: function(q) {
+                    console.log('START:');
+                    console.log(q);
+                }
+                , finish: function(f) {
+                    console.log('Finish:');
+                    console.log(f);
+                }
+                , async: false
+                , cast: true
             }
-            , error: function(e) {
-                console.log(e);
-            }
-            , success: function(s) {
-                console.log(s);
-            }
-        }
-        ).select("*").from("systables", false).where("owner='amitkr'").orderby("tabid").execute();
+        )
+        .select("*")
+        .from("systables", false)
+        .where("owner='amitkr'")
+        .orderby("tabid")
+        .execute();
 
 });
 

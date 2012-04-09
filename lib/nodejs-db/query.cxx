@@ -1090,7 +1090,6 @@ v8::Handle<v8::Value> nodejs_db::Query::set(const v8::Arguments& args) {
             }
             callbackIndex = 2;
         } else {
-            ARG_CHECK_STRING(0, query);
             ARG_CHECK_ARRAY(1, values);
             ARG_CHECK_OBJECT(2, options);
             valuesIndex = 1;
