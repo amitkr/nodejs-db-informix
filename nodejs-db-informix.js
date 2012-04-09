@@ -40,10 +40,24 @@ bee.prototype.emit = function() {
         }
     }
     */
-    // console.log("Arguments:");
-    // console.log(arguments);
     var type = arguments[0];
-    if (type === 'error'
+
+    if (type === 'success') {
+        console.log("Success:");
+        console.log(arguments);
+        var rs = arguments[1];
+
+        /*
+        for (var c = 0; c < rs.length; ++c) {
+            // console.log(rs[c]);
+            var r = rs[c];
+            for (var col in r) {
+                console.log(col + ' = ' + r[col]);
+            }
+        }
+        */
+    }
+    else if (type === 'error'
             && (!this._events
                 || !this._events.error
                 || (Array.isArray(this._events.error)
@@ -56,11 +70,12 @@ bee.prototype.emit = function() {
         // Silently allow unattached error events
         return;
     }
+
     return ee.prototype.emit.apply(this, arguments);
 }
 
 exports.Query = extend(ib.Query, bee);
-exports.Binding = extend(ib.Informix, bee);
+exports.Informix = extend(ib.Informix, bee);
 
 /*
 console.log('Query: ');

@@ -8,14 +8,14 @@ var settings = JSON.parse(require('fs').readFileSync('./tests/db_conf.json','utf
 /*
  * Create an Informix database nodejs object
  */
-var informix = require("../nodejs-db-informix");
+var bindings = require("../nodejs-db-informix");
 
 /*
  * Create a new Informix database bindings. Setup event callbacks. Connect to
  * the database.
  * c - connection
  */
-var c = new informix.Binding(settings);
+var c = new bindings.Informix(settings);
 c.on('error', function(error) {
     console.log("Error: ");
     console.log(error);
@@ -86,16 +86,13 @@ c.on('error', function(error) {
         }
         ).select("*").from("systables", false).where("owner='amitkr'").orderby("tabid").execute();
 
-    console.log('Result set: ');
-    console.log(rs);
-
 });
 
 
 
 /*
 var tests = require("./tests_base.js").get(function(callback) {
-    new informix.Database(settings).connect(function(err) {
+    new bindings.Database(settings).connect(function(err) {
         if (err) {
             throw new Error('Could not connect to test DB');
         }
