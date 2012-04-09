@@ -10,7 +10,7 @@ from os import unlink, symlink, chdir, environ
 from os.path import exists
 
 APPNAME = 'nodejs-db-informix'
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 
 top = '.'
 out = 'build'
