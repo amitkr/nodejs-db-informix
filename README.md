@@ -58,7 +58,7 @@ Debug
 Test
 ====
 	$ node-waf test
--or-
+	-or-
 	$ nodejs tests/tests.js
 
 
