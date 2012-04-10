@@ -46,6 +46,9 @@ Or to install the package globally
 
 	$ sudo npm install nodejs-db-informix -g
 
+NOTE: global install will fail if `INFORMIXDIR` and above mentioned environment
+variables in pre-reqs are not setup for root user.
+
 
 Build
 =====
