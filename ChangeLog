@@ -4,3 +4,10 @@
 0.0.2
 	* Removed debug statements.
 	* Fixed test.
+
+0.0.3
+	* Un-necessary comments cleanup
+
+0.0.4
+	* Removed esql dependency.
+	* Fixed arguments for query in test.
