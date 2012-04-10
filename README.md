@@ -37,13 +37,15 @@ Make sure Informix is running. Test that its accepting connections.
 $ dbaccess sysmaster -
 ```
 
+
 Install
 =======
 	$ npm install nodejs-db-informix
 
-NOTE: install with `sudo npm install nodejs-db-informix -g` fails at present.
-It complains about finding esql. This can be fixed by adding above paths in
-Pre-req for root user.
+Or to install the package globally
+
+	$ sudo npm install nodejs-db-informix -g
+
 
 Build
 =====
@@ -51,14 +53,16 @@ Build
 
 
 Debug
------
+=====
 	$ node-waf --debug distclean configure build
 
 
 Test
 ====
 	$ node-waf test
-	-or-
+
+-or-
+
 	$ nodejs tests/tests.js
 
 
