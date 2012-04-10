@@ -6,7 +6,7 @@
 #
 
 import Options, Utils
-from os import unlink, symlink, chdir, environ
+from os import unlink, symlink, chdir, environ, path
 from os.path import exists
 
 APPNAME = 'nodejs-db-informix'
@@ -22,6 +22,7 @@ def set_options(opt):
     opt.add_option('--info', action='store_true', help='Compile with -DINFO')
     opt.add_option('--error', action='store_true', help='Compile with -DERROR')
     opt.add_option('--warn', action='store_true', help='Enable extra -W* compiler flags')
+    opt.add_option('--informixdir', action='store', help='Informix install directory')
 
 def configure(conf):
     conf.check_tool('compiler_cxx')
@@ -32,11 +33,16 @@ def configure(conf):
     # Informix flags and libraries
     # esql = conf.find_program('esql', var='ESQL', mandatory=True)
 
-    informixdir = environ['INFORMIXDIR']
+    if Options.options.informixdir:
+        conf.env.INFORMIXDIR = path.abspath(path.expanduser(Options.options.informixdir))
+
+    informixdir = conf.env.INFORMIXDIR
     # assume informix is installed in /opt/informix if environment variable is
     # not set
     if informixdir == "":
         informixdir = '/opt/informix'
+
+    print "Using INFORMIXDIR =", informixdir
 
     # Enables all the warnings that are easy to avoid
     conf.env.append_unique('CXXFLAGS', ['-Wall'])
