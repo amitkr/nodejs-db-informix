@@ -17,3 +17,5 @@
 	  sysdatabases
 	* Fixed issue #3 query.select() with array of strings as arg produces
 	  wrong (quoted) select fields
+
+0.0.6
