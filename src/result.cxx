@@ -78,90 +78,111 @@ nodejs_db_informix::Result::Column::Column(
     if (this->typeName == "blob") {
         this->binary = 0;
         this->type   = BLOB;
-    } else
+    }
+    else
     if (this->typeName == "boolean") {
         this->binary = 0;
         this->type   = BOOL;
-    } else
+    }
+    else
     if (this->typeName == "byte") {
         this->binary = 0;
         this->type   = INT;
-    } else
+    }
+    else
     if (this->typeName == "char") {
         this->binary = 0;
-        this->type   = INT;
-    } else
+        this->type   = STRING;
+    }
+    else
     if (this->typeName == "clob") {
         this->binary = 0;
         this->type   = TEXT;
-    } else
+    }
+    else
     if (this->typeName == "date") {
         this->binary = 0;
         this->type   = DATE;
-    } else
+    }
+    else
     if (this->typeName == "datetime") {
         this->binary = 0;
         this->type   = DATETIME;
-    } else
+    }
+    else
     if (this->typeName == "decimal") {
         this->binary = 0;
         this->type   = NUMBER;
-    } else
+    }
+    else
     if (this->typeName == "float") {
         this->binary = 0;
         this->type   = NUMBER;
-    } else
+    }
+    else
     if (this->typeName == "int8") {
         this->binary = 0;
         this->type   = INT;
-    } else
+    }
+    else
     if (this->typeName == "integer") {
         this->binary = 0;
         this->type   = INT;
-    } else
+    }
+    else
     if (this->typeName == "interval") {
         this->binary = 0;
         this->type   = INTERVAL;
-    } else
+    }
+    else
     if (this->typeName == "lvarchar") {
         this->binary = 0;
         this->type   = STRING;
-    } else
+    }
+    else
     if (this->typeName == "money") {
         this->binary = 0;
         this->type   = MONEY;
-    } else
+    }
+    else
     if (this->typeName == "serial") {
         this->binary = 0;
         this->type   = INT;
-    } else
+    }
+    else
     if (this->typeName == "smallfloat") {
         this->binary = 0;
         this->type   = NUMBER;
-    } else
+    }
+    else
     if (this->typeName == "smallint") {
         this->binary = 0;
         this->type   = NUMBER;
-    } else
+    }
+    else
     if (this->typeName == "text") {
         this->binary = 0;
         this->type   = TEXT;
-    } else
+    }
+    else
     if (this->typeName == "varchar") {
         this->binary = 0;
         this->type   = STRING;
-    } else {
+    }
+    else {
         // sub-columns
         if (ti->IsRow()) {
             this->typeName = "row";
             this->type = ROW;
             this->binary = 0;
         }
+        else
         if (ti->IsCollection()) {
             this->typeName = "collection";
             this->type = COLLECTION;
             this->binary = 0;
         }
+        else
         if (ti->IsConstructed()) {
             this->typeName = "constructed";
             this->type = CONSTRUCTED;
@@ -279,7 +300,7 @@ bool nodejs_db_informix::Result::hasNext() const throw() {
     return (this->nextRow != NULL);
 }
 
-std::vector<std::string*>*
+std::vector<std::string>*
 nodejs_db_informix::Result::next() throw(nodejs_db::Exception&) {
     if (this->nextRow == NULL) {
         return NULL;
@@ -296,9 +317,9 @@ unsigned long* nodejs_db_informix::Result::columnLengths() throw(nodejs_db::Exce
     return this->colLengths;
 }
 
-std::vector<std::string*>*
+std::vector<std::string>*
 nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
-    std::vector<std::string*> *r = new std::vector<std::string*>();
+    std::vector<std::string> *row = new std::vector<std::string>();
 
     ITValue *v = this->resultSet->Fetch();
     if (v == NULL) {
@@ -306,26 +327,26 @@ nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
         return NULL;
     }
 
-    ITRow *row;
-    if (v->QueryInterface(ITRowIID, (void**) &row) == IT_QUERYINTERFACE_FAILED) {
+    ITRow *r; //ITRow is an abstract class
+    if (v->QueryInterface(ITRowIID, (void**) &r) == IT_QUERYINTERFACE_FAILED) {
         throw nodejs_db::Exception("Couldn't fetch ITRow for next row");
     } else {
-        long nCols = row->NumColumns();
-        this->colLengths = new unsigned long[nCols];
-        for (long i = 0; i < nCols; ++i) {
-            ITValue *cv = row->Column(i);
+        long nc = r->NumColumns(); // number of columns
+        this->colLengths = new unsigned long[nc];
+        for (long i = 0; i < nc; ++i) {
+            ITValue *cv = r->Column(i); // column value
             if (cv->IsNull()) {
                 // append null
-                r->push_back(new std::string("null"));
+                row->push_back(std::string("null"));
                 this->colLengths[i] = strlen("null");
             } else {
-                r->push_back(new std::string(cv->Printable().Data()));
+                row->push_back(std::string(cv->Printable().Data()));
                 this->colLengths[i] = cv->Printable().Length();
             }
         }
     }
 
-    return r;
+    return row;
 }
 
 uint64_t nodejs_db_informix::Result::index() const throw(std::out_of_range&) {

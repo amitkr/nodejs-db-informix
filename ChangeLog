@@ -11,3 +11,9 @@
 0.0.4
 	* Removed esql dependency.
 	* Fixed arguments for query in test.
+
+0.0.5
+	* Fixed issue #2 query returns 0 instead of database name from
+	  sysdatabases
+	* Fixed issue #3 query.select() with array of strings as arg produces
+	  wrong (quoted) select fields

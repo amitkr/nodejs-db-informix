@@ -560,7 +560,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Set(const v8::Arguments& args) {
         THROW_EXCEPTION("Non empty objects should be used for values in set");
     }
 
-    for (uint32_t j = 0, limitj = valueProperties->Length(); j < limitj; j++) {
+    for (uint32_t j = 0, max_j = valueProperties->Length(); j < max_j; j++) {
         v8::Local<v8::Value> propertyName = valueProperties->Get(j);
         v8::String::Utf8Value fieldName(propertyName);
         v8::Local<v8::Value> currentValue = values->Get(propertyName);
@@ -703,7 +703,7 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
             while (request->result->hasNext()) {
                 unsigned long* columnLengths = request->result->columnLengths();
                 assert(columnLengths);
-                std::vector<std::string*> *currentRow = request->result->next();
+                std::vector<std::string> *currentRow = request->result->next();
                 assert(currentRow);
 
                 if (!currentRow) {
@@ -724,7 +724,7 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
                         throw nodejs_db::Exception("Could not create buffer for column lengths");
                     }
 
-                    row->columns = new std::vector<std::string*>(size_t(request->columnCount));
+                    row->columns = new std::vector<std::string>(size_t(request->columnCount));
                     if (row->columns == NULL) {
                         throw nodejs_db::Exception("Could not create buffer for columns");
                     }
@@ -737,7 +737,7 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
                         std::cout
                             << "Column: " << i
                             << " Length: " << columnLengths[i]
-                            << " Value: " << *(currentRow->at(i))
+                            << " Value: " << currentRow->at(i)
                             << std::endl;
 #endif
                         row->columnLengths[i] = columnLengths[i];
@@ -921,6 +921,7 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
 #ifdef DEBUG
                 std::cout << ", columnCount " << request->columnCount << std::endl;
 #endif
+                /* setup the columns */
                 for (uint16_t i = 0; i < request->columnCount; i++) {
                     nodejs_db::Result::Column *currentColumn = request->result->column(i);
 
@@ -939,6 +940,7 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                     columns->Set(i, column);
                 }
 
+                /* setup rows */
                 row_t row;
                 uint64_t index = 0;
 
@@ -950,12 +952,13 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                     std::cout << "Row: " << index;
 #endif
 
-                    row.columnLengths = (unsigned long*) request->result->columnLengths();
+                    row.columnLengths = static_cast<unsigned long*>(request->result->columnLengths());
                     row.columns = request->result->next();
 
 #ifdef DEBUG
                     if (row.columns) {
-                        std::cout << ", Columns: " << row.columns->size()
+                        std::cout
+                            << ", Columns: " << row.columns->size()
                             << std::endl;
                     }
 #endif
@@ -1198,7 +1201,7 @@ std::string nodejs_db::Query::fieldName(v8::Local<v8::Value> v) const throw(node
             throw nodejs_db::Exception("Non empty objects should be used for value aliasing in select");
         }
 
-        for (uint32_t j = 0, limitj = valueProperties->Length(); j < limitj; j++) {
+        for (uint32_t j = 0, max_j = valueProperties->Length(); j < max_j; j++) {
             v8::Local<v8::Value> propertyName = valueProperties->Get(j);
             v8::String::Utf8Value fn(propertyName); // fieldName
 
@@ -1250,7 +1253,7 @@ std::string nodejs_db::Query::fieldName(v8::Local<v8::Value> v) const throw(node
         }
     } else if (v->IsString()) {
         v8::String::Utf8Value fn(v->ToString());
-        buffer += this->connection->escapeName(*fn);
+        buffer += *fn;
     } else {
         throw nodejs_db::Exception("Incorrect value type provided as field for select");
     }
@@ -1330,15 +1333,16 @@ nodejs_db::Query::row(
     row_t* currentRow
 ) const {
     DEBUG_LOG_FUNC;
-    v8::Local<v8::Object> row = v8::Object::New();
 
 #ifdef DEBUG
     std::cout
-            << std::endl
-            ;
+        << std::endl
+        ;
 #endif
 
-    for (uint16_t j = 0, limitj = result->columnCount(); j < limitj; j++) {
+    v8::Local<v8::Object> row = v8::Object::New();
+
+    for (uint16_t j = 0, max_j = result->columnCount(); j < max_j; ++j) {
         nodejs_db::Result::Column* currentColumn = result->column(j);
         v8::Local<v8::Value> v;
 
@@ -1348,8 +1352,8 @@ nodejs_db::Query::row(
             << ", Name: " << currentColumn->getName().c_str();
 #endif
 
-        if (currentRow->columns->at(j) != NULL) {
-            const char* currentValue = currentRow->columns->at(j)->c_str();
+        if (currentRow->columns->at(j).c_str() != NULL) {
+            const char* currentValue = currentRow->columns->at(j).c_str();
             unsigned long currentLength = currentRow->columnLengths[j];
 #ifdef DEBUG
             std::cout

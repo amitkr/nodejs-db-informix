@@ -55,6 +55,14 @@ bool nodejs_db::Connection::isAlive(bool ping) {
     return this->alive;
 }
 
+/**
+ * \fn std::string nodejs_db::Connection::escapeName
+ * escape the given string.
+ * e.g. first.second is escaped as 'first'.'second' is escapeChar is "'"
+ *
+ * \param[in] string String to be escaped
+ * \exception Exception&
+ */
 std::string nodejs_db::Connection::escapeName(const std::string& string) const throw(Exception&) {
     std::string escaped;
     if (string.find_first_of('.') != string.npos) {

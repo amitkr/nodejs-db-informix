@@ -23,7 +23,7 @@ class Result : public nodejs_db::Result {
                 nodejs_db::Result::Column::type_t getType() const;
 
                 friend std::ostream& operator<< (std::ostream &o, const Column &c) {
-                    o << "Column { name: " << c.name
+                    o   << "Column { name: " << c.name
                         << ", typeName: " << c.typeName
                         << ", type: " << c.type
                         << ", binary: " << c.binary
@@ -45,7 +45,7 @@ class Result : public nodejs_db::Result {
         ~Result();
         void release() throw();
         bool hasNext() const throw();
-        std::vector<std::string*>* next() throw(nodejs_db::Exception&);
+        std::vector<std::string>* next() throw(nodejs_db::Exception&);
         unsigned long* columnLengths() throw(nodejs_db::Exception&);
         uint64_t index() const throw(std::out_of_range&);
         Column* column(uint16_t i) const throw(std::out_of_range&);
@@ -65,13 +65,13 @@ class Result : public nodejs_db::Result {
         uint64_t rowNumber;
         bool empty;
 
-        std::vector<std::string*>* row() throw(nodejs_db::Exception&);
+        std::vector<std::string>* row() throw(nodejs_db::Exception&);
         void free() throw();
 
     private:
         ITSet* resultSet;
-        std::vector<std::string*>* previousRow;
-        std::vector<std::string*>* nextRow;
+        std::vector<std::string>* previousRow;
+        std::vector<std::string>* nextRow;
 };
 }
 

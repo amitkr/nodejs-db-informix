@@ -39,7 +39,7 @@ class Result {
         virtual ~Result();
         virtual void release() throw();
         virtual bool hasNext() const throw(Exception&) = 0;
-        virtual std::vector<std::string*>* next() throw(Exception&) = 0;
+        virtual std::vector<std::string>* next() throw(Exception&) = 0;
         virtual unsigned long* columnLengths() throw(Exception&) = 0;
         virtual uint64_t index() const throw(std::out_of_range&) = 0;
         virtual Column* column(uint16_t i) const throw(std::out_of_range&) = 0;

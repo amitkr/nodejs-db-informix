@@ -26,7 +26,7 @@ class Query : public EventEmitter {
 
     protected:
         struct row_t {
-            std::vector<std::string*>* columns;
+            std::vector<std::string>* columns;
             unsigned long* columnLengths;
         };
         struct execute_request_t {

@@ -1,6 +1,6 @@
 { 
-    "host": "informix",
-    "user": "amitkr",
+    "host": "",
+    "user": "",
     "password": "",
-    "database": "superstores_demo"
+    "database": "sysmaster"
 }

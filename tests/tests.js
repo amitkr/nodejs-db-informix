@@ -30,39 +30,7 @@ c.on('error', function(error) {
     console.log(settings);
     console.log("isConnected() == " + c.isConnected());
 
-    var q, rs;
-
-    // console.log(c);
-    // q = "select * from customer order by customer_num";
-    /*
-    q = "select * from units order by unit_name";
-    var rs = this.query(q
-        , []
-        , {
-            start: function(q) {
-                console.log(q);
-            }
-            , async: false
-            , cast: false
-            , each: function(r) {
-                console.log("XXXX");
-                console.log(r);
-            }
-        }).execute();
-    */
-
-    /*
-    rs = c.query().select("*").from("foo").execute({
-        start: function (q) {
-            console.log (q);
-        }
-       , async : false
-    });
-
-    console.log('Result set: ');
-    console.log(rs);
-
-    */
+    var rs;
 
     rs = this
         .query(
@@ -85,10 +53,36 @@ c.on('error', function(error) {
                 , cast: true
             }
         )
-        .select("*")
-        .from("systables", false)
-        .where("owner='amitkr'")
-        .orderby("tabid")
+        .select("name,partnum,owner,created")
+        .from("sysdatabases", false)
+        .orderby("name")
+        .execute();
+
+    rs = this
+        .query(
+              ""
+            , []
+            , function () {
+                console.log('CALLBACK:');
+                console.log(arguments);
+            }
+            , {
+                start: function(q) {
+                    console.log('START:');
+                    console.log(q);
+                }
+                , finish: function(f) {
+                    console.log('Finish:');
+                    console.log(f);
+                }
+                , async: false
+                , cast: true
+            }
+        )
+        .select(["procid", "procname", "owner", "mode", "retsize", "symsize", "datasize", "codesize", "numargs", "isproc"])
+        .from("sysprocedures", false)
+        .where("owner='informix'")
+        .orderby("procname")
         .execute();
 
 });
