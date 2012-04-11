@@ -317,7 +317,7 @@ v8::Handle<v8::Value> nodejs_db::Query::OrderBy(const v8::Arguments& args) {
 v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
     v8::HandleScope scope;
 
-    if (args.Length() <= 0) {
+    if (args.Length() < 1) {
         THROW_EXCEPTION("LIMIT requires at-least one integer argument");
     }
 
@@ -330,6 +330,12 @@ v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
 
     /* make a copy of sql */
     std::string s = query->sql.str();
+
+    // XXX perhaps a good idea to check for existing NEXT clause
+    // and silently ignore in case it exists
+
+    // Fix XXX for SKIP clause if it already exists
+    // First look for skip and then look for select
     size_t pos = s.find_first_of(select);
 
     if (pos == std::string::npos) {
@@ -347,10 +353,12 @@ v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
     query->sql.str(s);
     query->sql.seekp(s.length(), std::ios_base::beg);
 
+#ifdef DEV
     std::cout
         << "SQL : " << s << std::endl
         << "SQL SS: " << query->sql.str()
         << std::endl;
+#endif
 
     return scope.Close(args.This());
 }
@@ -365,17 +373,41 @@ v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
 v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
     v8::HandleScope scope;
 
-    if (args.Length() > 0) {
-        ARG_CHECK_UINT32(0, rows);
+    if (args.Length() < 1) {
+        THROW_EXCEPTION("FIRST clause requires at-least one integer argument");
     }
+
+    ARG_CHECK_UINT32(0, rows);
 
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    query->sql << " FIRST ";
-    if (args.Length() > 0) {
-        query->sql << args[0]->ToInt32()->Value();
+    std::string select = "SELECT";
+
+    /* make a copy of sql */
+    std::string s = query->sql.str();
+
+    // XXX perhaps a good idea to check for existing NEXT clause
+    // and silently ignore in case it exists
+
+    // Fix XXX for SKIP clause if it already exists
+    // First look for skip and then look for select
+    size_t pos = s.find_first_of(select);
+
+    if (pos == std::string::npos) {
+        THROW_EXCEPTION("No SELECT clause found in the query");
     }
+
+    /* create the first clause */
+    std::string firstStr = " FIRST ";
+    std::ostringstream ss;
+
+    ss << firstStr << args[0]->ToInt32()->Value();
+
+    s.insert(pos + select.length(), ss.str());
+
+    query->sql.str(s);
+    query->sql.seekp(s.length(), std::ios_base::beg);
 
     return scope.Close(args.This());
 }
@@ -390,17 +422,39 @@ v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
 v8::Handle<v8::Value> nodejs_db::Query::Skip(const v8::Arguments& args) {
     v8::HandleScope scope;
 
-    if (args.Length() > 0) {
-        ARG_CHECK_UINT32(0, rows);
+    if (args.Length() < 1) {
+        THROW_EXCEPTION("SKIP clause requires at-least one integer argument");
     }
+
+    ARG_CHECK_UINT32(0, rows);
 
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    query->sql << " SKIP ";
-    if (args.Length() > 0) {
-        query->sql << args[0]->ToInt32()->Value();
+    std::string select = "SELECT";
+
+    /* make a copy of sql */
+    std::string s = query->sql.str();
+
+    // XXX perhaps a good idea to check for existing NEXT clause
+    // and silently ignore in case it exists
+
+    size_t pos = s.find_first_of(select);
+
+    if (pos == std::string::npos) {
+        THROW_EXCEPTION("No SELECT clause found in the query");
     }
+
+    /* create the skip clause */
+    std::string skipStr = " SKIP ";
+    std::ostringstream ss;
+
+    ss << skipStr << args[0]->ToInt32()->Value();
+
+    s.insert(pos + select.length(), ss.str());
+
+    query->sql.str(s);
+    query->sql.seekp(s.length(), std::ios_base::beg);
 
     return scope.Close(args.This());
 }
