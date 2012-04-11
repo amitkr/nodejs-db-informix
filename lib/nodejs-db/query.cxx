@@ -6,13 +6,15 @@ int nodejs_db::Query::gmtDelta;
 
 void nodejs_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::FunctionTemplate> constructorTemplate) {
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select", Select);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "skip", Skip);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit", Limit);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "first", First);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "from", From);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "join", Join);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "where", Where);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "and", And);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "or", Or);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "orderby", OrderBy);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit", Limit);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "add", Add);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "insert", Insert);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "update", Update);
@@ -305,25 +307,98 @@ v8::Handle<v8::Value> nodejs_db::Query::OrderBy(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
+/**
+ * \fn nodejs_db::Query::Limit
+ *
+ * \breif insert the LIMIT projection clause in query
+ *
+ * \param[in] args v8::Arguments&
+ */
 v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
     v8::HandleScope scope;
 
-    if (args.Length() > 1) {
-        ARG_CHECK_UINT32(0, offset);
-        ARG_CHECK_UINT32(1, rows);
-    } else {
+    if (args.Length() <= 0) {
+        THROW_EXCEPTION("LIMIT requires at-least one integer argument");
+    }
+
+    ARG_CHECK_UINT32(0, rows);
+
+    nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+    assert(query);
+
+    std::string select = "SELECT";
+
+    /* make a copy of sql */
+    std::string s = query->sql.str();
+    size_t pos = s.find_first_of(select);
+
+    if (pos == std::string::npos) {
+        THROW_EXCEPTION("No SELECT clause found in the query");
+    }
+
+    /* create the limit clause */
+    std::string limitStr = " LIMIT ";
+    std::ostringstream ss;
+
+    ss << limitStr << args[0]->ToInt32()->Value();
+
+    s.insert(pos + select.length(), ss.str());
+
+    query->sql.str(s);
+    query->sql.seekp(s.length(), std::ios_base::beg);
+
+    std::cout
+        << "SQL : " << s << std::endl
+        << "SQL SS: " << query->sql.str()
+        << std::endl;
+
+    return scope.Close(args.This());
+}
+
+/**
+ * \fn nodejs_db::Query::First
+ *
+ * \breif insert the FIRST projection clause
+ *
+ * \param[in] args v8::Arguments&
+ */
+v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
+    v8::HandleScope scope;
+
+    if (args.Length() > 0) {
         ARG_CHECK_UINT32(0, rows);
     }
 
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    query->sql << " LIMIT ";
-    if (args.Length() > 1) {
+    query->sql << " FIRST ";
+    if (args.Length() > 0) {
         query->sql << args[0]->ToInt32()->Value();
-        query->sql << ",";
-        query->sql << args[1]->ToInt32()->Value();
-    } else {
+    }
+
+    return scope.Close(args.This());
+}
+
+/**
+ * \fn nodejs_db::Query::Skip
+ *
+ * \breif insert SKIP projection clause into query
+ *
+ * \param[in] args v8::Arguments&
+ */
+v8::Handle<v8::Value> nodejs_db::Query::Skip(const v8::Arguments& args) {
+    v8::HandleScope scope;
+
+    if (args.Length() > 0) {
+        ARG_CHECK_UINT32(0, rows);
+    }
+
+    nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+    assert(query);
+
+    query->sql << " SKIP ";
+    if (args.Length() > 0) {
         query->sql << args[0]->ToInt32()->Value();
     }
 
