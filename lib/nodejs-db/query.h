@@ -38,6 +38,16 @@ class Query : public EventEmitter {
             bool buffered;
             std::vector<row_t*>* rows;
         };
+        struct projection_clause {
+            bool insert;
+            bool argRequired;
+            uint32_t arg;
+        };
+        struct projection_clause_t {
+            projection_clause skip;
+            projection_clause first;
+            projection_clause next;
+        };
         Connection* connection;
         std::ostringstream sql;
         std::vector< v8::Persistent<v8::Value> > values;

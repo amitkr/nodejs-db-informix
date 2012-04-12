@@ -314,7 +314,8 @@ v8::Handle<v8::Value> nodejs_db::Query::OrderBy(const v8::Arguments& args) {
  *
  * \param[in] args v8::Arguments&
  */
-v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
+v8::Handle<v8::Value>
+nodejs_db::Query::Limit(const v8::Arguments& args) {
     v8::HandleScope scope;
 
     if (args.Length() < 1) {
@@ -323,35 +324,88 @@ v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
 
     ARG_CHECK_UINT32(0, rows);
 
+    /*
+     * XXX We might as well allow 2 arguments for Limit.
+     * arg1 is rows to skip
+     * arg2 is rows to select
+     */
+    /*
+    if (args.Length() >= 2) {
+        ARG_CHECK_UINT32(0, skip);
+        ARG_CHECK_UINT32(1, rows);
+    } else {
+        ARG_CHECK_UINT32(0, rows);
+    }
+    */
+
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
-
-    std::string select = "SELECT";
 
     /* make a copy of sql */
     std::string s = query->sql.str();
 
-    // XXX perhaps a good idea to check for existing NEXT clause
+    /* look for existing LIMIT clause */
+    const std::string limitStr = " LIMIT ";
+    size_t limitPos = s.find(limitStr);
+    if (limitPos != std::string::npos) {
+        THROW_EXCEPTION("LIMIT clause already exists, cannot have two of them "
+                "in the query");
+    }
+
+    /* look for FIRST clause */
+    const std::string firstStr = " FIRST ";
+    size_t firstPos = s.find(firstStr);
+    if (firstPos != std::string::npos) {
+        THROW_EXCEPTION("LIMIT clause is incompatible with FIRST clause");
+    }
+
+    /* look for SKIP clause */
+    const std::string skipStr  = " SKIP ";
+    size_t skipPos = s.find(skipStr);
+
+    if (skipPos != std::string::npos) {
+        /* insert LIMIT after SKIP \d+ */
+        skipPos += skipStr.length();
+        char c = s.at(skipPos);
+        while (isspace(c) || isdigit(c)) {
+            std::cout
+                << "Char: " << c << std::endl
+                << "skipPos: " << skipPos << std::endl;
+             ++skipPos;
+             c = s.at(skipPos);
+        } 
+        --skipPos;
+
+        /* create the limit clause */
+        std::ostringstream ss;
+        ss << limitStr << args[0]->ToInt32()->Value();
+
+        s.insert(skipPos, ss.str());
+
+    } else {
+        /* insert LIMIT after SELECT */
+        const std::string selectStr   = "SELECT";
+        size_t selectPos = s.find(selectStr);
+
+        if (selectPos == std::string::npos) {
+            THROW_EXCEPTION("No SELECT clause found in the query");
+        }
+
+        /* create the limit clause */
+        std::ostringstream ss;
+        ss << limitStr << args[0]->ToInt32()->Value();
+
+        s.insert(selectPos + selectStr.length(), ss.str());
+
+    }
+
+    query->sql.str(s);
+    query->sql.seekp(s.length(), std::ios_base::beg);
+    // XXX perhaps a good idea to check for existing LIMIT clause
     // and silently ignore in case it exists
 
     // Fix XXX for SKIP clause if it already exists
     // First look for skip and then look for select
-    size_t pos = s.find_first_of(select);
-
-    if (pos == std::string::npos) {
-        THROW_EXCEPTION("No SELECT clause found in the query");
-    }
-
-    /* create the limit clause */
-    std::string limitStr = " LIMIT ";
-    std::ostringstream ss;
-
-    ss << limitStr << args[0]->ToInt32()->Value();
-
-    s.insert(pos + select.length(), ss.str());
-
-    query->sql.str(s);
-    query->sql.seekp(s.length(), std::ios_base::beg);
 
 #ifdef DEV
     std::cout
@@ -392,7 +446,7 @@ v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
 
     // Fix XXX for SKIP clause if it already exists
     // First look for skip and then look for select
-    size_t pos = s.find_first_of(select);
+    size_t pos = s.find(select);
 
     if (pos == std::string::npos) {
         THROW_EXCEPTION("No SELECT clause found in the query");
@@ -439,7 +493,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Skip(const v8::Arguments& args) {
     // XXX perhaps a good idea to check for existing NEXT clause
     // and silently ignore in case it exists
 
-    size_t pos = s.find_first_of(select);
+    size_t pos = s.find(select);
 
     if (pos == std::string::npos) {
         THROW_EXCEPTION("No SELECT clause found in the query");
@@ -715,6 +769,11 @@ v8::Handle<v8::Value> nodejs_db::Query::Sql(const v8::Arguments& args) {
     return scope.Close(v8::String::New(query->sql.str().c_str()));
 }
 
+/**
+ * \fn nodejs_db::Query::Execute
+ * Execute the query
+ *
+ */
 v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
     DEBUG_LOG_FUNC;
     v8::HandleScope scope;
@@ -737,6 +796,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
         THROW_EXCEPTION(exception.what())
     }
 
+    /* invoke the start callback function */
     if (query->cbStart != NULL && !query->cbStart->IsEmpty()) {
         v8::Local<v8::Value> argv[1];
         argv[0] = v8::String::New(sql.c_str());
@@ -1617,6 +1677,10 @@ nodejs_db::Query::row(
     return row;
 }
 
+/**
+ * \fn nodejs_db::Query::placeholders
+ * \breif find the placeholders positions in the query
+ */
 std::vector<std::string::size_type>
 nodejs_db::Query::placeholders(std::string* parsed)
 const throw(nodejs_db::Exception&) {
@@ -1649,7 +1713,7 @@ const throw(nodejs_db::Exception&) {
     }
 
     if (positions.size() != this->values.size()) {
-        throw nodejs_db::Exception("Wrong number of values to escape");
+        throw nodejs_db::Exception("Wrong number of values for placeholders");
     }
 
     return positions;
