@@ -1635,7 +1635,9 @@ throw(nodejs_db::Exception&) {
     std::string select = "SELECT";
     size_t pos = s.find(select);
     if (pos == std::string::npos) {
-        throw nodejs_db::Exception("No SELECT clause found in the query");
+        /* silently ignore perhaps this is not a select query */
+        // throw nodejs_db::Exception("No SELECT clause found in the query");
+        return;
     }
 
     if (this->projection.skip.insert) {
