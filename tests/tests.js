@@ -80,9 +80,9 @@ c.on('error', function(error) {
             }
         )
         .select(["procid", "procname", "owner", "mode", "retsize", "symsize", "datasize", "codesize", "numargs", "isproc"])
-        .skip(5)
-        .limit(3)
-        //.first(3)
+        .skip(15)
+        .limit(15,10)
+        .first(3)
         .from("sysprocedures", false)
         .where("owner='informix'")
         .orderby("procname")

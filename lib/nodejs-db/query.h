@@ -40,16 +40,16 @@ class Query : public EventEmitter {
         };
         struct projection_clause {
             bool insert;
-            bool argRequired;
             uint32_t arg;
         };
         struct projection_clause_t {
             projection_clause skip;
             projection_clause first;
-            projection_clause next;
+            projection_clause limit;
         };
         Connection* connection;
         std::ostringstream sql;
+        projection_clause_t projection;
         std::vector< v8::Persistent<v8::Value> > values;
         bool async;
         bool cast;
@@ -93,9 +93,9 @@ class Query : public EventEmitter {
         v8::Local<v8::Object> row(Result* result, row_t* currentRow) const;
         virtual std::string parseQuery() const throw(Exception&);
         virtual std::vector<std::string::size_type> placeholders(std::string* parsed) const throw(Exception&);
+        virtual void addProjections() throw(Exception&);
         virtual Result* execute() const throw(Exception&);
         std::string value(v8::Local<v8::Value> value, bool inArray = false, bool escape = true, int precision = -1) const throw(Exception&);
-
 
     private:
         static bool gmtDeltaLoaded;

@@ -322,97 +322,33 @@ nodejs_db::Query::Limit(const v8::Arguments& args) {
         THROW_EXCEPTION("LIMIT requires at-least one integer argument");
     }
 
-    ARG_CHECK_UINT32(0, rows);
-
-    /*
-     * XXX We might as well allow 2 arguments for Limit.
-     * arg1 is rows to skip
-     * arg2 is rows to select
-     */
-    /*
     if (args.Length() >= 2) {
         ARG_CHECK_UINT32(0, skip);
         ARG_CHECK_UINT32(1, rows);
+
+        nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+        assert(query);
+
+        query->projection.skip.insert = true;
+        query->projection.skip.arg = args[0]->ToInt32()->Value();
+
+        query->projection.first.insert = false;
+        query->projection.first.arg = 0;
+
+        query->projection.limit.insert = true;
+        query->projection.limit.arg = args[1]->ToInt32()->Value();
     } else {
         ARG_CHECK_UINT32(0, rows);
+
+        nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+        assert(query);
+
+        query->projection.first.insert = false;
+        query->projection.first.arg = 0;
+
+        query->projection.limit.insert = true;
+        query->projection.limit.arg = args[0]->ToInt32()->Value();
     }
-    */
-
-    nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
-    assert(query);
-
-    /* make a copy of sql */
-    std::string s = query->sql.str();
-
-    /* look for existing LIMIT clause */
-    const std::string limitStr = " LIMIT ";
-    size_t limitPos = s.find(limitStr);
-    if (limitPos != std::string::npos) {
-        THROW_EXCEPTION("LIMIT clause already exists, cannot have two of them "
-                "in the query");
-    }
-
-    /* look for FIRST clause */
-    const std::string firstStr = " FIRST ";
-    size_t firstPos = s.find(firstStr);
-    if (firstPos != std::string::npos) {
-        THROW_EXCEPTION("LIMIT clause is incompatible with FIRST clause");
-    }
-
-    /* look for SKIP clause */
-    const std::string skipStr  = " SKIP ";
-    size_t skipPos = s.find(skipStr);
-
-    if (skipPos != std::string::npos) {
-        /* insert LIMIT after SKIP \d+ */
-        skipPos += skipStr.length();
-        char c = s.at(skipPos);
-        while (isspace(c) || isdigit(c)) {
-            std::cout
-                << "Char: " << c << std::endl
-                << "skipPos: " << skipPos << std::endl;
-             ++skipPos;
-             c = s.at(skipPos);
-        } 
-        --skipPos;
-
-        /* create the limit clause */
-        std::ostringstream ss;
-        ss << limitStr << args[0]->ToInt32()->Value();
-
-        s.insert(skipPos, ss.str());
-
-    } else {
-        /* insert LIMIT after SELECT */
-        const std::string selectStr   = "SELECT";
-        size_t selectPos = s.find(selectStr);
-
-        if (selectPos == std::string::npos) {
-            THROW_EXCEPTION("No SELECT clause found in the query");
-        }
-
-        /* create the limit clause */
-        std::ostringstream ss;
-        ss << limitStr << args[0]->ToInt32()->Value();
-
-        s.insert(selectPos + selectStr.length(), ss.str());
-
-    }
-
-    query->sql.str(s);
-    query->sql.seekp(s.length(), std::ios_base::beg);
-    // XXX perhaps a good idea to check for existing LIMIT clause
-    // and silently ignore in case it exists
-
-    // Fix XXX for SKIP clause if it already exists
-    // First look for skip and then look for select
-
-#ifdef DEV
-    std::cout
-        << "SQL : " << s << std::endl
-        << "SQL SS: " << query->sql.str()
-        << std::endl;
-#endif
 
     return scope.Close(args.This());
 }
@@ -436,32 +372,11 @@ v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    std::string select = "SELECT";
+    query->projection.first.insert = true;
+    query->projection.first.arg = args[0]->ToInt32()->Value();
 
-    /* make a copy of sql */
-    std::string s = query->sql.str();
-
-    // XXX perhaps a good idea to check for existing NEXT clause
-    // and silently ignore in case it exists
-
-    // Fix XXX for SKIP clause if it already exists
-    // First look for skip and then look for select
-    size_t pos = s.find(select);
-
-    if (pos == std::string::npos) {
-        THROW_EXCEPTION("No SELECT clause found in the query");
-    }
-
-    /* create the first clause */
-    std::string firstStr = " FIRST ";
-    std::ostringstream ss;
-
-    ss << firstStr << args[0]->ToInt32()->Value();
-
-    s.insert(pos + select.length(), ss.str());
-
-    query->sql.str(s);
-    query->sql.seekp(s.length(), std::ios_base::beg);
+    query->projection.limit.insert = false;
+    query->projection.limit.arg = 0;
 
     return scope.Close(args.This());
 }
@@ -485,30 +400,8 @@ v8::Handle<v8::Value> nodejs_db::Query::Skip(const v8::Arguments& args) {
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    std::string select = "SELECT";
-
-    /* make a copy of sql */
-    std::string s = query->sql.str();
-
-    // XXX perhaps a good idea to check for existing NEXT clause
-    // and silently ignore in case it exists
-
-    size_t pos = s.find(select);
-
-    if (pos == std::string::npos) {
-        THROW_EXCEPTION("No SELECT clause found in the query");
-    }
-
-    /* create the skip clause */
-    std::string skipStr = " SKIP ";
-    std::ostringstream ss;
-
-    ss << skipStr << args[0]->ToInt32()->Value();
-
-    s.insert(pos + select.length(), ss.str());
-
-    query->sql.str(s);
-    query->sql.seekp(s.length(), std::ios_base::beg);
+    query->projection.skip.insert = true;
+    query->projection.skip.arg = args[0]->ToInt32()->Value();
 
     return scope.Close(args.This());
 }
@@ -786,6 +679,12 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
         if (!set.IsEmpty()) {
             return scope.Close(set);
         }
+    }
+
+    try {
+        query->addProjections();
+    } catch(const nodejs_db::Exception& exception) {
+        THROW_EXCEPTION(exception.what());
     }
 
     std::string sql;
@@ -1685,6 +1584,7 @@ std::vector<std::string::size_type>
 nodejs_db::Query::placeholders(std::string* parsed)
 const throw(nodejs_db::Exception&) {
     DEBUG_LOG_FUNC;
+
     std::string query = this->sql.str();
     std::vector<std::string::size_type> positions;
     char quote = 0;
@@ -1719,10 +1619,58 @@ const throw(nodejs_db::Exception&) {
     return positions;
 }
 
+/**
+ * assuming that this function will be called only once and none of the
+ * projection clauses are present into the query
+ */
+void
+nodejs_db::Query::addProjections()
+throw(nodejs_db::Exception&) {
+    DEBUG_LOG_FUNC;
+
+    /* make a copy of sql */
+    std::string s = this->sql.str();
+
+    std::ostringstream ss;
+    std::string select = "SELECT";
+    size_t pos = s.find(select);
+    if (pos == std::string::npos) {
+        throw nodejs_db::Exception("No SELECT clause found in the query");
+    }
+
+    if (this->projection.skip.insert) {
+        /* create the skip clause */
+        std::string skipStr = " SKIP ";
+
+        ss << skipStr << this->projection.skip.arg;
+    }
+
+    if (this->projection.limit.insert) {
+        const std::string limitStr = " LIMIT ";
+
+        ss << limitStr << this->projection.limit.arg;
+    }
+    else
+    if (this->projection.first.insert) {
+        const std::string firstStr = " FIRST ";
+        ss << firstStr << this->projection.first.arg;
+    }
+
+    s.insert(pos + select.length(), ss.str());
+
+    this->sql.str(s);
+    this->sql.seekp(s.length(), std::ios_base::beg);
+}
+
+/**
+ * \fn nodejs_db::Query::parseQuery()
+ * \breif Parse the sql
+ */
 std::string
 nodejs_db::Query::parseQuery()
 const throw(nodejs_db::Exception&) {
     DEBUG_LOG_FUNC;
+
     std::string parsed;
     std::vector<std::string::size_type> positions = this->placeholders(&parsed);
 
@@ -1730,9 +1678,9 @@ const throw(nodejs_db::Exception&) {
     for (std::vector<std::string::size_type>::iterator iterator = positions.begin(), end = positions.end(); iterator != end; ++iterator, index++) {
         std::string v = this->value(*(this->values[index]));
 
-	if(!v.length()) {
-		throw nodejs_db::Exception("Internal error, attempting to replace with zero length value");
-	}
+        if(!v.length()) {
+            throw nodejs_db::Exception("Internal error, attempting to replace with zero length value");
+        }
 
         parsed.replace(*iterator + delta, 1, v);
         delta += (v.length() - 1);
