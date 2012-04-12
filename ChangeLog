@@ -19,3 +19,7 @@
 	  wrong (quoted) select fields
 
 0.0.6
+	* Implemented Informix Projection Clauses SKIP, FIRST, LIMIT
+
+0.0.7
+	* New logic for implementing Informix Projection Clauses
