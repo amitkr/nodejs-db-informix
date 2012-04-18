@@ -15,6 +15,7 @@ var bindings = require("../nodejs-db-informix");
  * the database.
  * c - connection
  */
+/*
 var c = new bindings.Informix(settings);
 c.on('error', function(error) {
     console.log("Error: ");
@@ -90,15 +91,26 @@ c.on('error', function(error) {
 
 });
 
+*/
 
 
-/*
 var tests = require("./tests_base.js").get(function(callback) {
-    new bindings.Database(settings).connect(function(err) {
+    var c = new bindings.Informix(settings);
+    c.on('error', function(error) {
+        console.log("Error: ");
+        console.log(error);
+    }).on('ready', function(server) {
+        console.log("Connection ready to ");
+        console.log(server);
+    }).connect(function(err) {
         if (err) {
-            throw new Error('Could not connect to test DB');
+            throw new Error('Could not connect to DB');
         }
-        console.log('Connected to db with ' + settings);
+
+        console.log('Connected to db with ');
+        console.log(settings);
+        console.log("isConnected() == " + c.isConnected());
+
         callback(this);
     });
 });
@@ -109,4 +121,4 @@ for(var test in tests) {
     console.log(test);
     exports[test] = tests[test];
 }
-*/
+
