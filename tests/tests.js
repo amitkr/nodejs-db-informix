@@ -85,6 +85,29 @@ c.on('error', function(error) {
         .orderby("procname")
         .execute();
 
+	rs = this
+		.query(
+			"execute procedure pCheckBIREvDispOkay(?, ?, ?, ?)"
+            , ['2013-01-08 13:30:00', '2013-01-08 23:30:00', 'Y', 'Y']
+            , function () {
+                console.log('CALLBACK:');
+                console.log(arguments);
+            }
+            , {
+                start: function(q) {
+                    console.log('START:');
+                    console.log(q);
+                }
+                , finish: function(f) {
+                    console.log('Finish:');
+                    console.log(f);
+                }
+                , async: false
+                , cast: true
+            }
+        )
+		.execute();
+
 });
 
 
