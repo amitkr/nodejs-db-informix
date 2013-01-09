@@ -38,8 +38,18 @@ class Query : public EventEmitter {
             bool buffered;
             std::vector<row_t*>* rows;
         };
+        struct projection_clause {
+            bool insert;
+            uint32_t arg;
+        };
+        struct projection_clause_t {
+            projection_clause skip;
+            projection_clause first;
+            projection_clause limit;
+        };
         Connection* connection;
         std::ostringstream sql;
+        projection_clause_t projection;
         std::vector< v8::Persistent<v8::Value> > values;
         bool async;
         bool cast;
@@ -51,13 +61,15 @@ class Query : public EventEmitter {
         Query();
         ~Query();
         static v8::Handle<v8::Value> Select(const v8::Arguments& args);
+        static v8::Handle<v8::Value> Skip(const v8::Arguments& args);
+        static v8::Handle<v8::Value> Limit(const v8::Arguments& args);
+        static v8::Handle<v8::Value> First(const v8::Arguments& args);
         static v8::Handle<v8::Value> From(const v8::Arguments& args);
         static v8::Handle<v8::Value> Join(const v8::Arguments& args);
         static v8::Handle<v8::Value> Where(const v8::Arguments& args);
         static v8::Handle<v8::Value> And(const v8::Arguments& args);
         static v8::Handle<v8::Value> Or(const v8::Arguments& args);
         static v8::Handle<v8::Value> OrderBy(const v8::Arguments& args);
-        static v8::Handle<v8::Value> Limit(const v8::Arguments& args);
         static v8::Handle<v8::Value> Add(const v8::Arguments& args);
         static v8::Handle<v8::Value> Insert(const v8::Arguments& args);
         static v8::Handle<v8::Value> Update(const v8::Arguments& args);
@@ -81,9 +93,9 @@ class Query : public EventEmitter {
         v8::Local<v8::Object> row(Result* result, row_t* currentRow) const;
         virtual std::string parseQuery() const throw(Exception&);
         virtual std::vector<std::string::size_type> placeholders(std::string* parsed) const throw(Exception&);
+        virtual void addProjections() throw(Exception&);
         virtual Result* execute() const throw(Exception&);
         std::string value(v8::Local<v8::Value> value, bool inArray = false, bool escape = true, int precision = -1) const throw(Exception&);
-
 
     private:
         static bool gmtDeltaLoaded;

@@ -12,7 +12,7 @@
         , "csdk"
     ]
     , "homepage": "https://github.com/amitkr/nodejs-db-informix"
-    , "version": "0.0.5"
+    , "version": "0.0.7"
     , "engines": {
         "node" : ">=0.6.12"
     }

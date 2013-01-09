@@ -6,13 +6,15 @@ int nodejs_db::Query::gmtDelta;
 
 void nodejs_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::FunctionTemplate> constructorTemplate) {
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select", Select);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "skip", Skip);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit", Limit);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "first", First);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "from", From);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "join", Join);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "where", Where);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "and", And);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "or", Or);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "orderby", OrderBy);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit", Limit);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "add", Add);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "insert", Insert);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "update", Update);
@@ -305,27 +307,101 @@ v8::Handle<v8::Value> nodejs_db::Query::OrderBy(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
-v8::Handle<v8::Value> nodejs_db::Query::Limit(const v8::Arguments& args) {
+/**
+ * \fn nodejs_db::Query::Limit
+ *
+ * \breif insert the LIMIT projection clause in query
+ *
+ * \param[in] args v8::Arguments&
+ */
+v8::Handle<v8::Value>
+nodejs_db::Query::Limit(const v8::Arguments& args) {
     v8::HandleScope scope;
 
-    if (args.Length() > 1) {
-        ARG_CHECK_UINT32(0, offset);
+    if (args.Length() < 1) {
+        THROW_EXCEPTION("LIMIT requires at-least one integer argument");
+    }
+
+    if (args.Length() >= 2) {
+        ARG_CHECK_UINT32(0, skip);
         ARG_CHECK_UINT32(1, rows);
+
+        nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+        assert(query);
+
+        query->projection.skip.insert = true;
+        query->projection.skip.arg = args[0]->ToInt32()->Value();
+
+        query->projection.first.insert = false;
+        query->projection.first.arg = 0;
+
+        query->projection.limit.insert = true;
+        query->projection.limit.arg = args[1]->ToInt32()->Value();
     } else {
         ARG_CHECK_UINT32(0, rows);
+
+        nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+        assert(query);
+
+        query->projection.first.insert = false;
+        query->projection.first.arg = 0;
+
+        query->projection.limit.insert = true;
+        query->projection.limit.arg = args[0]->ToInt32()->Value();
     }
+
+    return scope.Close(args.This());
+}
+
+/**
+ * \fn nodejs_db::Query::First
+ *
+ * \breif insert the FIRST projection clause
+ *
+ * \param[in] args v8::Arguments&
+ */
+v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
+    v8::HandleScope scope;
+
+    if (args.Length() < 1) {
+        THROW_EXCEPTION("FIRST clause requires at-least one integer argument");
+    }
+
+    ARG_CHECK_UINT32(0, rows);
 
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    query->sql << " LIMIT ";
-    if (args.Length() > 1) {
-        query->sql << args[0]->ToInt32()->Value();
-        query->sql << ",";
-        query->sql << args[1]->ToInt32()->Value();
-    } else {
-        query->sql << args[0]->ToInt32()->Value();
+    query->projection.first.insert = true;
+    query->projection.first.arg = args[0]->ToInt32()->Value();
+
+    query->projection.limit.insert = false;
+    query->projection.limit.arg = 0;
+
+    return scope.Close(args.This());
+}
+
+/**
+ * \fn nodejs_db::Query::Skip
+ *
+ * \breif insert SKIP projection clause into query
+ *
+ * \param[in] args v8::Arguments&
+ */
+v8::Handle<v8::Value> nodejs_db::Query::Skip(const v8::Arguments& args) {
+    v8::HandleScope scope;
+
+    if (args.Length() < 1) {
+        THROW_EXCEPTION("SKIP clause requires at-least one integer argument");
     }
+
+    ARG_CHECK_UINT32(0, rows);
+
+    nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+    assert(query);
+
+    query->projection.skip.insert = true;
+    query->projection.skip.arg = args[0]->ToInt32()->Value();
 
     return scope.Close(args.This());
 }
@@ -586,6 +662,11 @@ v8::Handle<v8::Value> nodejs_db::Query::Sql(const v8::Arguments& args) {
     return scope.Close(v8::String::New(query->sql.str().c_str()));
 }
 
+/**
+ * \fn nodejs_db::Query::Execute
+ * Execute the query
+ *
+ */
 v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
     DEBUG_LOG_FUNC;
     v8::HandleScope scope;
@@ -600,6 +681,12 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
         }
     }
 
+    try {
+        query->addProjections();
+    } catch(const nodejs_db::Exception& exception) {
+        THROW_EXCEPTION(exception.what());
+    }
+
     std::string sql;
 
     try {
@@ -608,6 +695,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
         THROW_EXCEPTION(exception.what())
     }
 
+    /* invoke the start callback function */
     if (query->cbStart != NULL && !query->cbStart->IsEmpty()) {
         v8::Local<v8::Value> argv[1];
         argv[0] = v8::String::New(sql.c_str());
@@ -1488,10 +1576,15 @@ nodejs_db::Query::row(
     return row;
 }
 
+/**
+ * \fn nodejs_db::Query::placeholders
+ * \breif find the placeholders positions in the query
+ */
 std::vector<std::string::size_type>
 nodejs_db::Query::placeholders(std::string* parsed)
 const throw(nodejs_db::Exception&) {
     DEBUG_LOG_FUNC;
+
     std::string query = this->sql.str();
     std::vector<std::string::size_type> positions;
     char quote = 0;
@@ -1520,16 +1613,66 @@ const throw(nodejs_db::Exception&) {
     }
 
     if (positions.size() != this->values.size()) {
-        throw nodejs_db::Exception("Wrong number of values to escape");
+        throw nodejs_db::Exception("Wrong number of values for placeholders");
     }
 
     return positions;
 }
 
+/**
+ * assuming that this function will be called only once and none of the
+ * projection clauses are present into the query
+ */
+void
+nodejs_db::Query::addProjections()
+throw(nodejs_db::Exception&) {
+    DEBUG_LOG_FUNC;
+
+    /* make a copy of sql */
+    std::string s = this->sql.str();
+
+    std::ostringstream ss;
+    std::string select = "SELECT";
+    size_t pos = s.find(select);
+    if (pos == std::string::npos) {
+        /* silently ignore perhaps this is not a select query */
+        // throw nodejs_db::Exception("No SELECT clause found in the query");
+        return;
+    }
+
+    if (this->projection.skip.insert) {
+        /* create the skip clause */
+        std::string skipStr = " SKIP ";
+
+        ss << skipStr << this->projection.skip.arg;
+    }
+
+    if (this->projection.limit.insert) {
+        const std::string limitStr = " LIMIT ";
+
+        ss << limitStr << this->projection.limit.arg;
+    }
+    else
+    if (this->projection.first.insert) {
+        const std::string firstStr = " FIRST ";
+        ss << firstStr << this->projection.first.arg;
+    }
+
+    s.insert(pos + select.length(), ss.str());
+
+    this->sql.str(s);
+    this->sql.seekp(s.length(), std::ios_base::beg);
+}
+
+/**
+ * \fn nodejs_db::Query::parseQuery()
+ * \breif Parse the sql
+ */
 std::string
 nodejs_db::Query::parseQuery()
 const throw(nodejs_db::Exception&) {
     DEBUG_LOG_FUNC;
+
     std::string parsed;
     std::vector<std::string::size_type> positions = this->placeholders(&parsed);
 
@@ -1537,9 +1680,9 @@ const throw(nodejs_db::Exception&) {
     for (std::vector<std::string::size_type>::iterator iterator = positions.begin(), end = positions.end(); iterator != end; ++iterator, index++) {
         std::string v = this->value(*(this->values[index]));
 
-	if(!v.length()) {
-		throw nodejs_db::Exception("Internal error, attempting to replace with zero length value");
-	}
+        if(!v.length()) {
+            throw nodejs_db::Exception("Internal error, attempting to replace with zero length value");
+        }
 
         parsed.replace(*iterator + delta, 1, v);
         delta += (v.length() - 1);
