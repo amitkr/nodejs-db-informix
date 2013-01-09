@@ -87,7 +87,7 @@ c.on('error', function(error) {
 
 	rs = this
 		.query(
-			"execute procedure pCheckBIREvDispOkay(?, ?, ?, ?)"
+			"execute procedure pTestNodeJs(?, ?, ?, ?)"
             , ['2013-01-08 13:30:00', '2013-01-08 23:30:00', 'Y', 'Y']
             , function () {
                 console.log('CALLBACK:');
