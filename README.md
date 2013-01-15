@@ -53,6 +53,8 @@ variables in pre-reqs are not setup for root user.
 Build
 =====
 	$ node-waf distclean configure build
+	$ node-gyp clean configure build
+	$ node-gyp rebuild
 
 
 Debug
