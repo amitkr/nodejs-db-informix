@@ -26,5 +26,5 @@
 	* New logic for implementing Informix Projection Clauses
 
 0.0.8
-	* compatibility upgrage to nodejs v0.8.0
+	* compatibility upgrade to nodejs v0.8.0
 	* added docs.doxy for doxygen

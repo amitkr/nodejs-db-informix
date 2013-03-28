@@ -5,23 +5,25 @@ bool nodejs_db::Query::gmtDeltaLoaded = false;
 int nodejs_db::Query::gmtDelta;
 
 void nodejs_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::FunctionTemplate> constructorTemplate) {
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select", Select);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "skip", Skip);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit", Limit);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "first", First);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "from", From);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "join", Join);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "where", Where);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "and", And);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "or", Or);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "orderby", OrderBy);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "add", Add);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "insert", Insert);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "update", Update);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "set", Set);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "delete", Delete);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "sql", Sql);
-    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "execute", Execute);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select",    Select);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "skip",      Skip);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit",     Limit);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "first",     First);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "from",      From);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "join",      Join);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "where",     Where);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "and",       And);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "or",        Or);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "orderby",   OrderBy);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "add",       Add);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "insert",    Insert);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "into",      Into);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "values",    Values);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "update",    Update);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "set",       Set);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "delete",    Delete);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "sql",       Sql);
+    NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "execute",   Execute);
 }
 
 nodejs_db::Query::Query(): nodejs_db::EventEmitter(),
@@ -575,6 +577,28 @@ v8::Handle<v8::Value> nodejs_db::Query::Insert(const v8::Arguments& args) {
         query->sql << " ";
     }
 
+    return scope.Close(args.This());
+}
+
+v8::Handle<v8::Value> nodejs_db::Query::Into(const v8::Arguments& args) {
+    v8::HandleScope scope;
+
+    if (args.Length() < 1) {
+        THROW_EXCEPTION("INTO clause requires at-least one string argument");
+    }
+
+    ARG_CHECK_STRING(0, table);
+
+    ARG_CHECK_OPTIONAL_BOOL(1, escape);
+
+    nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+    assert(query);
+
+    return scope.Close(args.This());
+}
+
+v8::Handle<v8::Value> nodejs_db::Query::Values(const v8::Arguments& args) {
+    v8::HandleScope scope;
     return scope.Close(args.This());
 }
 
@@ -1677,7 +1701,12 @@ const throw(nodejs_db::Exception&) {
     std::vector<std::string::size_type> positions = this->placeholders(&parsed);
 
     uint32_t index = 0, delta = 0;
-    for (std::vector<std::string::size_type>::iterator iterator = positions.begin(), end = positions.end(); iterator != end; ++iterator, index++) {
+    for (std::vector<std::string::size_type>::iterator iterator = positions.begin()
+            , end = positions.end()
+            ; iterator != end
+            ; ++iterator
+            , index++)
+    {
         std::string v = this->value(*(this->values[index]));
 
         if(!v.length()) {
