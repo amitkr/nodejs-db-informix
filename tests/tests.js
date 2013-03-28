@@ -1,4 +1,8 @@
-/* tests */
+/* tests 
+ * 
+ * This must be run using nodeunit
+ * $ nodeunit /path/to/this/file.js
+ */
 
 /*
  * Connection configurations
