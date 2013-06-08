@@ -31,6 +31,7 @@
         'MITRACE_OFF',
       ],
       'cflags': [
+        '-Wall',
         '-g',
         '-fsigned-char',
       ],
