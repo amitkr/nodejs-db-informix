@@ -212,14 +212,25 @@ nodejs_db_informix::Result::Column::getTypeName() const {
     return this->typeName;
 }
 
+nodejs_db_informix::Result::Result(ITBool b) throw (nodejs_db::Exception&) :
+    columns(),
+    columnNames(),
+    totalColumns(0),
+    rowNumber(0),
+    empty(true),
+    previousRow(NULL),
+    nextRow(NULL)
+{
+    empty = bool(b);
+}
 
 /**
  *
  * \rs Record set of type ITSet*
  * \cti Column Type Information of type ITTypeInfo
  */
-nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti) throw(nodejs_db::Exception&)
-    : columns(),
+nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti) throw(nodejs_db::Exception&) :
+    columns(),
     columnNames(),
     totalColumns(0),
     rowNumber(0),
@@ -259,8 +270,8 @@ nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti) throw(nodej
  *
  *
  */
-nodejs_db_informix::Result::Result(ITSet* rs) throw(nodejs_db::Exception&)
-    : columns(),
+nodejs_db_informix::Result::Result(ITSet* rs) throw(nodejs_db::Exception&) :
+    columns(),
     columnNames(),
     totalColumns(0),
     rowNumber(0),

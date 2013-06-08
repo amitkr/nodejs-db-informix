@@ -40,6 +40,7 @@ class Result : public nodejs_db::Result {
                 bool binary;
         };
 
+        explicit Result(ITBool b)  throw(nodejs_db::Exception&);
         explicit Result(ITSet* rs) throw(nodejs_db::Exception&);
         explicit Result(ITSet* rs, const ITTypeInfo *cti) throw(nodejs_db::Exception&);
         ~Result();
