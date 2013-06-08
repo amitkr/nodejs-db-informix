@@ -331,13 +331,13 @@ nodejs_db::Query::Limit(const v8::Arguments& args) {
         nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
         assert(query);
 
-        query->projection.skip.insert = true;
+        query->projection.skip.flag = true;
         query->projection.skip.arg = args[0]->ToInt32()->Value();
 
-        query->projection.first.insert = false;
+        query->projection.first.flag = false;
         query->projection.first.arg = 0;
 
-        query->projection.limit.insert = true;
+        query->projection.limit.flag = true;
         query->projection.limit.arg = args[1]->ToInt32()->Value();
     } else {
         ARG_CHECK_UINT32(0, rows);
@@ -345,10 +345,10 @@ nodejs_db::Query::Limit(const v8::Arguments& args) {
         nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
         assert(query);
 
-        query->projection.first.insert = false;
+        query->projection.first.flag = false;
         query->projection.first.arg = 0;
 
-        query->projection.limit.insert = true;
+        query->projection.limit.flag = true;
         query->projection.limit.arg = args[0]->ToInt32()->Value();
     }
 
@@ -374,10 +374,10 @@ v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    query->projection.first.insert = true;
+    query->projection.first.flag = true;
     query->projection.first.arg = args[0]->ToInt32()->Value();
 
-    query->projection.limit.insert = false;
+    query->projection.limit.flag = false;
     query->projection.limit.arg = 0;
 
     return scope.Close(args.This());
@@ -402,7 +402,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Skip(const v8::Arguments& args) {
     nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
-    query->projection.skip.insert = true;
+    query->projection.skip.flag = true;
     query->projection.skip.arg = args[0]->ToInt32()->Value();
 
     return scope.Close(args.This());
@@ -1140,9 +1140,16 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
     Query::freeRequest(request, freeAll);
 }
 
+
+
+/**
+ * execute the SQL query
+ */
 nodejs_db::Result* nodejs_db::Query::execute() const throw(nodejs_db::Exception&) {
     return this->connection->query(this->sql.str());
 }
+
+
 
 void nodejs_db::Query::freeRequest(execute_request_t* request, bool freeAll) {
     DEBUG_LOG_FUNC;
@@ -1174,6 +1181,8 @@ void nodejs_db::Query::freeRequest(execute_request_t* request, bool freeAll) {
         delete request;
     }
 }
+
+
 
 v8::Handle<v8::Value> nodejs_db::Query::set(const v8::Arguments& args) {
     if (args.Length() == 0) {
@@ -1643,6 +1652,8 @@ const throw(nodejs_db::Exception&) {
     return positions;
 }
 
+
+
 /**
  * assuming that this function will be called only once and none of the
  * projection clauses are present into the query
@@ -1664,20 +1675,20 @@ throw(nodejs_db::Exception&) {
         return;
     }
 
-    if (this->projection.skip.insert) {
+    if (this->projection.skip.flag) {
         /* create the skip clause */
         std::string skipStr = " SKIP ";
 
         ss << skipStr << this->projection.skip.arg;
     }
 
-    if (this->projection.limit.insert) {
+    if (this->projection.limit.flag) {
         const std::string limitStr = " LIMIT ";
 
         ss << limitStr << this->projection.limit.arg;
     }
     else
-    if (this->projection.first.insert) {
+    if (this->projection.first.flag) {
         const std::string firstStr = " FIRST ";
         ss << firstStr << this->projection.first.arg;
     }
@@ -1687,6 +1698,8 @@ throw(nodejs_db::Exception&) {
     this->sql.str(s);
     this->sql.seekp(s.length(), std::ios_base::beg);
 }
+
+
 
 /**
  * \fn nodejs_db::Query::parseQuery()
@@ -1719,6 +1732,8 @@ const throw(nodejs_db::Exception&) {
 
     return parsed;
 }
+
+
 
 std::string
 nodejs_db::Query::value(
@@ -1826,6 +1841,8 @@ nodejs_db::Query::value(
 
     return currentStream.str();
 }
+
+
 
 std::string nodejs_db::Query::fromDate(const double timeStamp) const throw(nodejs_db::Exception&) {
     char* buffer = new char[20];

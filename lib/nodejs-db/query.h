@@ -39,7 +39,7 @@ class Query : public EventEmitter {
             std::vector<row_t*>* rows;
         };
         struct projection_clause {
-            bool insert;
+            bool flag;
             uint32_t arg;
         };
         struct projection_clause_t {
