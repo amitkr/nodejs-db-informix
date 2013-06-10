@@ -28,6 +28,7 @@ void nodejs_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::Fu
 
 nodejs_db::Query::Query(): nodejs_db::EventEmitter(),
     connection(NULL),
+    sqlType(Query::NONE),
     async(true),
     cast(true),
     bufferText(false),
@@ -37,7 +38,10 @@ nodejs_db::Query::Query(): nodejs_db::EventEmitter(),
 {}
 
 nodejs_db::Query::~Query() {
-    for (std::vector< v8::Persistent<v8::Value> >::iterator iterator = this->values.begin(), end = this->values.end(); iterator != end; ++iterator) {
+    for (std::vector< v8::Persistent<v8::Value> >::iterator iterator = this->values.begin(),
+            end = this->values.end();
+            iterator != end; ++iterator
+    ) {
         iterator->Dispose();
     }
 
@@ -473,6 +477,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Delete(const v8::Arguments& args) {
     }
 
     query->sql << "DELETE";
+    query->sqlType = Query::DELETE;
 
     if (args.Length() > 0) {
         try {
@@ -533,6 +538,8 @@ v8::Handle<v8::Value> nodejs_db::Query::Insert(const v8::Arguments& args) {
     } catch(const nodejs_db::Exception& exception) {
         THROW_EXCEPTION(exception.what());
     }
+
+    query->sqlType = Query::INSERT;
 
     if (argsLength > 1) {
         if (fieldsIndex != -1) {
@@ -641,6 +648,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Update(const v8::Arguments& args) {
     }
 
     query->sql << "UPDATE ";
+    query->sqlType = Query::UPDATE;
 
     try {
         query->sql << query->tableName(args[0], escape);

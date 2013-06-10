@@ -28,6 +28,7 @@ class Query : public EventEmitter {
             SELECT = 0x1,
             INSERT = 0x1 << 1,
             UPDATE = 0x1 << 2,
+            DELETE = 0x1 << 3,
         } query_t;
 
     protected:
