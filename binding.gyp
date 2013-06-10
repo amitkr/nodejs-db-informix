@@ -37,6 +37,7 @@
       ],
       'cflags_cc': [
         '-fexceptions',
+        '-std=c++11',
       ],
       'ldflags': [
         '-lpthread',
