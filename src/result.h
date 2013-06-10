@@ -40,9 +40,9 @@ class Result : public nodejs_db::Result {
                 bool binary;
         };
 
-        explicit Result(ITBool b)  throw(nodejs_db::Exception&);
-        explicit Result(ITSet* rs) throw(nodejs_db::Exception&);
-        explicit Result(ITSet* rs, const ITTypeInfo *cti) throw(nodejs_db::Exception&);
+        explicit Result(ITBool b, long re = 0)  throw(nodejs_db::Exception&);
+        explicit Result(ITSet* rs, long re = 0) throw(nodejs_db::Exception&);
+        explicit Result(ITSet* rs, const ITTypeInfo *cti, long re = 0) throw(nodejs_db::Exception&);
         ~Result();
         void release() throw();
         bool hasNext() const throw();
@@ -64,6 +64,7 @@ class Result : public nodejs_db::Result {
         unsigned long *colLengths;
         uint16_t totalColumns;
         uint64_t rowNumber;
+        long rowsAffected;
         bool empty;
 
         std::vector<std::string>* row() throw(nodejs_db::Exception&);

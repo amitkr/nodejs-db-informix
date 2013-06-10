@@ -27,8 +27,8 @@ class Connection : public nodejs_db::Connection {
         void close();
         std::string escape(const std::string& string) const throw(nodejs_db::Exception&);
         std::string version() const;
-        // nodejs_db::Result* query(const std::string& query) const throw(nodejs_db::Exception&);
         nodejs_db::Result* query(const std::string& query) const throw(nodejs_db::Exception&);
+        nodejs_db::Result* query_x(const std::string& query) const throw(nodejs_db::Exception&);
 
     protected:
         std::string charset;

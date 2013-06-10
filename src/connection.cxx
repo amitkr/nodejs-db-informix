@@ -197,21 +197,6 @@ nodejs_db_informix::Connection::version() const {
     return std::string("0.0.1");
 }
 
-ITCallbackResult
-// nodejs_db_informix::Connection::_QueryErrorHandler(
-_QueryErrorHandler(
-    const ITErrorManager& err
-    , void* args
-    , long errCode
-) {
-    std::ostream *s = (std::ostream*) args;
-    (*s) << "Query: [" << errCode << "]"
-        << err.SqlState().Data() << ' '
-        << err.ErrorText().Data()
-        << std::endl;
-
-    return IT_NOTHANDLED;
-}
 
 
 #ifdef DEV
@@ -249,6 +234,29 @@ nodejs_db_informix::Connection::_testExecForIteration() const {
 }
 #endif
 
+
+
+ITCallbackResult
+// nodejs_db_informix::Connection::_QueryErrorHandler(
+_QueryErrorHandler(
+    const ITErrorManager& err
+    , void* args
+    , long errCode
+) {
+    std::ostream *s = (std::ostream*) args;
+    (*s) << "Query: [" << errCode << "]"
+        << err.SqlState().Data() << ' '
+        << err.ErrorText().Data()
+        << std::endl;
+
+    return IT_NOTHANDLED;
+}
+
+
+
+/**
+ * execute select query
+ */
 nodejs_db::Result*
 nodejs_db_informix::Connection::query(const std::string& query) const throw(nodejs_db::Exception&) {
 
@@ -283,12 +291,30 @@ nodejs_db_informix::Connection::query(const std::string& query) const throw(node
     }
 
     // let the caller handle problems with q.RowType()
-    return new nodejs_db_informix::Result(rs, q.RowType());
+    return new nodejs_db_informix::Result(rs, q.RowType(), q.RowCount());
 }
 
-/*
+
+
+/**
+ * For insert, update, delete etc. we need a different ITQuery object
+ * Therefore, we need a new function
+ */
 nodejs_db::Result*
-nodejs_db_informix::Connection::query(const std::string& query) const throw(nodejs_db::Exception&) {
-    return new Result();
+nodejs_db_informix::Connection::query_x(const std::string& query) const throw(nodejs_db::Exception&) {
+    ITQuery q(*(this->connection));
+
+    q.AddCallback(_QueryErrorHandler, (void*) &std::cerr);
+
+    ITBool s = q.ExecForStatus(query.c_str());
+
+    // query type
+    ITString qt = q.Command();
+
+#ifdef DEV
+    std::cout << "Type of query: " << qt.Data() << std::endl;
+    std::cout << "Result of DML: " << s << std::endl;
+#endif
+
+    return new nodejs_db_informix::Result(s, q.RowCount());
 }
-*/

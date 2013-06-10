@@ -32,6 +32,7 @@ class Connection {
         virtual std::string escape(const std::string& string) const throw(Exception&) = 0;
         virtual std::string version() const = 0;
         virtual Result* query(const std::string& query) const throw(Exception&) = 0;
+        virtual Result* query_x(const std::string& query) const throw(Exception&) = 0;
         virtual void lock();
         virtual void unlock();
 

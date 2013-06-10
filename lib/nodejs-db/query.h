@@ -23,6 +23,12 @@ class Query : public EventEmitter {
         static void Init(v8::Handle<v8::Object> target, v8::Persistent<v8::FunctionTemplate> constructorTemplate);
         void setConnection(Connection* connection);
         v8::Handle<v8::Value> set(const v8::Arguments& args);
+        typedef enum {
+            NONE   = 0,
+            SELECT = 0x1,
+            INSERT = 0x1 << 1,
+            UPDATE = 0x1 << 2,
+        } query_t;
 
     protected:
         struct row_t {
@@ -49,6 +55,7 @@ class Query : public EventEmitter {
         };
         Connection* connection;
         std::ostringstream sql;
+        query_t sqlType;
         projection_clause_t projection;
         std::vector< v8::Persistent<v8::Value> > values;
         bool async;

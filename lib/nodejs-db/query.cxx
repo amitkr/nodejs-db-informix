@@ -75,6 +75,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Select(const v8::Arguments& args) {
     assert(query);
 
     query->sql << "SELECT ";
+    query->sqlType = Query::SELECT;
 
     if (args[0]->IsArray()) {
         v8::Local<v8::Array> fields = v8::Array::Cast(*args[0]);
@@ -309,6 +310,8 @@ v8::Handle<v8::Value> nodejs_db::Query::OrderBy(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
+
+
 /**
  * \fn nodejs_db::Query::Limit
  *
@@ -355,6 +358,8 @@ nodejs_db::Query::Limit(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
+
+
 /**
  * \fn nodejs_db::Query::First
  *
@@ -383,6 +388,8 @@ v8::Handle<v8::Value> nodejs_db::Query::First(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
+
+
 /**
  * \fn nodejs_db::Query::Skip
  *
@@ -407,6 +414,8 @@ v8::Handle<v8::Value> nodejs_db::Query::Skip(const v8::Arguments& args) {
 
     return scope.Close(args.This());
 }
+
+
 
 v8::Handle<v8::Value> nodejs_db::Query::Add(const v8::Arguments& args) {
     v8::HandleScope scope;
@@ -438,6 +447,8 @@ v8::Handle<v8::Value> nodejs_db::Query::Add(const v8::Arguments& args) {
 
     return scope.Close(args.This());
 }
+
+
 
 v8::Handle<v8::Value> nodejs_db::Query::Delete(const v8::Arguments& args) {
     v8::HandleScope scope;
@@ -473,6 +484,8 @@ v8::Handle<v8::Value> nodejs_db::Query::Delete(const v8::Arguments& args) {
 
     return scope.Close(args.This());
 }
+
+
 
 v8::Handle<v8::Value> nodejs_db::Query::Insert(const v8::Arguments& args) {
     v8::HandleScope scope;
@@ -1146,6 +1159,10 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
  * execute the SQL query
  */
 nodejs_db::Result* nodejs_db::Query::execute() const throw(nodejs_db::Exception&) {
+    if (this->sqlType != Query::SELECT) {
+        return this->connection->query_x(this->sql.str());
+    }
+
     return this->connection->query(this->sql.str());
 }
 

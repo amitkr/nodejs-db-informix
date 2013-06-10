@@ -212,11 +212,13 @@ nodejs_db_informix::Result::Column::getTypeName() const {
     return this->typeName;
 }
 
-nodejs_db_informix::Result::Result(ITBool b) throw (nodejs_db::Exception&) :
+
+nodejs_db_informix::Result::Result(ITBool b, long re) throw (nodejs_db::Exception&) :
     columns(),
     columnNames(),
     totalColumns(0),
     rowNumber(0),
+    rowsAffected(re),
     empty(true),
     previousRow(NULL),
     nextRow(NULL)
@@ -229,11 +231,12 @@ nodejs_db_informix::Result::Result(ITBool b) throw (nodejs_db::Exception&) :
  * \rs Record set of type ITSet*
  * \cti Column Type Information of type ITTypeInfo
  */
-nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti) throw(nodejs_db::Exception&) :
+nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti, long re) throw(nodejs_db::Exception&) :
     columns(),
     columnNames(),
     totalColumns(0),
     rowNumber(0),
+    rowsAffected(re),
     empty(true),
     previousRow(NULL),
     nextRow(NULL)
@@ -270,11 +273,12 @@ nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti) throw(nodej
  *
  *
  */
-nodejs_db_informix::Result::Result(ITSet* rs) throw(nodejs_db::Exception&) :
+nodejs_db_informix::Result::Result(ITSet* rs, long re) throw(nodejs_db::Exception&) :
     columns(),
     columnNames(),
     totalColumns(0),
     rowNumber(0),
+    rowsAffected(re),
     empty(true),
     previousRow(NULL),
     nextRow(NULL)
@@ -301,7 +305,6 @@ void nodejs_db_informix::Result::free() throw() {
     this->release();
     this->columns.clear();
     this->columnNames.clear();
-
 }
 
 void nodejs_db_informix::Result::release() throw() {
@@ -385,7 +388,7 @@ uint64_t nodejs_db_informix::Result::insertId() const throw() {
 }
 
 uint64_t nodejs_db_informix::Result::affectedCount() const throw() {
-    return 0;
+    return rowsAffected;
 }
 
 uint16_t nodejs_db_informix::Result::warningCount() const throw() {
