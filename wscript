@@ -39,7 +39,7 @@ def configure(conf):
         informixdir = '/opt/informix'
 
     # Enables all the warnings that are easy to avoid
-    conf.env.append_unique('CXXFLAGS', ['-Wall'])
+    conf.env.append_unique('CXXFLAGS', ['-Wall', '-std=c++11'])
 
     if Options.options.warn:
         # Extra warnings
