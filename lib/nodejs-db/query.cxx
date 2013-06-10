@@ -1858,7 +1858,7 @@ nodejs_db::Query::value(
         } else {
             currentStream << string;
         }
-    } else {	
+    } else {
         v8::String::Utf8Value currentString(v->ToString());
         std::string string = *currentString;
         throw nodejs_db::Exception("Unknown type for to convert to SQL, converting `" + string + "'");
