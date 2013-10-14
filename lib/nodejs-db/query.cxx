@@ -4,6 +4,10 @@
 bool nodejs_db::Query::gmtDeltaLoaded = false;
 int nodejs_db::Query::gmtDelta;
 
+#if !NODE_VERSION_AT_LEAST(0, 6, 0)
+uv_async_t nodejs_db::Query::g_async;
+#endif
+
 void nodejs_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::FunctionTemplate> constructorTemplate) {
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select",    Select);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "skip",      Skip);
@@ -787,8 +791,22 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
 
     if (query->async) {
         request->query->Ref();
+#if NODE_VERSION_AT_LEAST(0, 6, 0)
         eio_custom(eioExecute, EIO_PRI_DEFAULT, eioExecuteFinished, request);
         ev_ref(EV_DEFAULT_UC);
+#else
+        uv_work_t* req = new uv_work_t();
+        req->data = request;
+        uv_queue_work(uv_default_loop(), req, uvExecute, (uv_after_work_cb)uvExecuteFinished);
+
+#if NODE_VERSION_AT_LEAST(0, 7, 9)
+        uv_ref((uv_handle_t *)&g_async);
+#else
+        uv_req(uv_default_loop());
+#endif
+
+#endif
+
     } else {
         request->query->executeAsync(request);
     }
@@ -796,6 +814,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
 }
 
+#if NODE_VERSION_AT_LEAST(0, 6, 0)
 /**
  * eioExecute is responsible for executing the function and creating data. The
  * data is then passed to eioExecuteFinished callback function for return
@@ -804,11 +823,24 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
 void
 #else
 int
-#endif
+#endif // NODE_VERSION_AT_LEAST(0, 5, 0)
 nodejs_db::Query::eioExecute(eio_req* eioRequest) {
     DEBUG_LOG_FUNC;
 
     execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
+
+#else
+
+/**
+ * uvExecute is responsible for executing the function and creating data. The
+ * data is then passed to uvExecuteFinished callback function for return
+ */
+void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
+    DEBUG_LOG_FUNC;
+    execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
+
+#endif // NODE_VERSION_AT_LEAST (0, 6, 0)
+
     assert(request);
 
     try {
@@ -898,11 +930,20 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
 #endif
 }
 
+#if NODE_VERSION_AT_LEAST(0, 6, 0)
 int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
     DEBUG_LOG_FUNC;
     v8::HandleScope scope;
 
     execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
+#else
+void nodejs_db::Query::uvExecuteFinished(uv_work_t* uvRequest, int status) {
+    DEBUG_LOG_FUNC;
+    v8::HandleScope scope;
+
+    execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
+#endif // NODE_VERSION_AT_LEAST(0, 6, 0)
+
     assert(request);
 
 #ifdef DEBUG

@@ -33,15 +33,21 @@ class Binding : public EventEmitter {
         static v8::Handle<v8::Value> Name(const v8::Arguments& args);
         static v8::Handle<v8::Value> Query(const v8::Arguments& args);
         static
+#if NODE_VERSION_AT_LEAST(0, 6, 0)
 #if NODE_VERSION_AT_LEAST(0, 5, 0)
         void
 #else
         int
-#endif
+#endif // NODE_VERSION_AT_LEAST(0, 5, 0)
         eioConnect(eio_req* req);
+        static int eioConnectFinished(eio_req* eioRequest);
+#else
+        static uv_async_t g_async;
+        static void uvConnect(uv_work_t* uvRequest);
+        static void uvConnectFunushed(uv_work_t* uvRequest, int status);
+#endif // NODE_VERSION_AT_LEAST(0, 6, 0)
         static void connect(connect_request_t* request);
         static void connectFinished(connect_request_t* request);
-        static int eioConnectFinished(eio_req* eioRequest);
         virtual v8::Handle<v8::Value> set(const v8::Local<v8::Object> options) = 0;
         virtual v8::Persistent<v8::Object> createQuery() const = 0;
 };
