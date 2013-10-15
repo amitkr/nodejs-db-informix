@@ -31,10 +31,10 @@
     }]
     , "main": "./nodejs-db-informix"
     , "scripts": {
-          "install": "node-waf configure build"
+          "install": "node-gyp configure build"
         , "preuninstall": "rm -rf build/*"
-        , "test" : "node-waf test"
-        , "doc" : "node-waf doc"
+        , "test" : "nodeunit tests/tests.js"
+        , "doc" : "doxygen docs/docs.doxy"
     }
     , "devDependencies" : {
           "nodeunit" : "*"
@@ -42,7 +42,7 @@
     }
     , "dependencies": {}
     , "optionalDependencies": {}
-    , "author": "Amit Kumar <amitkr@rocketmail.com> (http://amitkr.net)"
+    , "author": "Amit Kumar <amitkr@rocketmail.com> (https://github.com/amitkr)"
     , "repository": {
         "type": "git",
         "url": "git://github.com/amitkr/nodejs-db-informix.git"
