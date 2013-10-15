@@ -87,7 +87,11 @@ class Query : public EventEmitter {
         static v8::Handle<v8::Value> Delete(const v8::Arguments& args);
         static v8::Handle<v8::Value> Sql(const v8::Arguments& args);
         static v8::Handle<v8::Value> Execute(const v8::Arguments& args);
-#if NODE_VERSION_AT_LEAST(0, 6, 0)
+#if NODE_VERSION_AT_LEAST(0, 7, 8)
+        static uv_async_t g_async;
+        static void uvExecute(uv_work_t* uvRequest);
+        static void uvExecuteFinished(uv_work_t* Rquest, int status);
+#else
         static
 #if NODE_VERSION_AT_LEAST(0, 5, 0)
         void
@@ -96,11 +100,7 @@ class Query : public EventEmitter {
 #endif // NODE_VERSION_AT_LEAST(0, 5, 0)
         eioExecute(eio_req* eioRequest);
         static int eioExecuteFinished(eio_req* eioRequest);
-#else
-        static uv_async_t g_async;
-        static void uvExecute(uv_work_t* uvRequest);
-        static void uvExecuteFinished(uv_work_t* Rquest, int status);
-#endif // NODE_VERSION_AT_LEAST(0, 6, 0)
+#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
         void executeAsync(execute_request_t* request);
         static void freeRequest(execute_request_t* request, bool freeAll = true);
         std::string fieldName(v8::Local<v8::Value> value) const throw(Exception&);

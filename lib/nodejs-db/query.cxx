@@ -4,7 +4,7 @@
 bool nodejs_db::Query::gmtDeltaLoaded = false;
 int nodejs_db::Query::gmtDelta;
 
-#if !NODE_VERSION_AT_LEAST(0, 6, 0)
+#if NODE_VERSION_AT_LEAST(0, 7, 8)
 uv_async_t nodejs_db::Query::g_async;
 #endif
 
@@ -791,10 +791,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
 
     if (query->async) {
         request->query->Ref();
-#if NODE_VERSION_AT_LEAST(0, 6, 0)
-        eio_custom(eioExecute, EIO_PRI_DEFAULT, eioExecuteFinished, request);
-        ev_ref(EV_DEFAULT_UC);
-#else
+#if NODE_VERSION_AT_LEAST(0, 7, 8)
         uv_work_t* req = new uv_work_t();
         req->data = request;
         uv_queue_work(uv_default_loop(), req, uvExecute, (uv_after_work_cb)uvExecuteFinished);
@@ -803,9 +800,12 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
         uv_ref((uv_handle_t *)&g_async);
 #else
         uv_req(uv_default_loop());
-#endif
+#endif // NODE_VERSION_AT_LEAST(0, 7, 9)
 
-#endif
+#else
+        eio_custom(eioExecute, EIO_PRI_DEFAULT, eioExecuteFinished, request);
+        ev_ref(EV_DEFAULT_UC);
+#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
 
     } else {
         request->query->executeAsync(request);
@@ -814,7 +814,17 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
 }
 
-#if NODE_VERSION_AT_LEAST(0, 6, 0)
+#if NODE_VERSION_AT_LEAST(0, 7, 8)
+/**
+ * uvExecute is responsible for executing the function and creating data. The
+ * data is then passed to uvExecuteFinished callback function for return
+ */
+void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
+    DEBUG_LOG_FUNC;
+    execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
+
+#else
+
 /**
  * eioExecute is responsible for executing the function and creating data. The
  * data is then passed to eioExecuteFinished callback function for return
@@ -829,17 +839,7 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
 
     execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
 
-#else
-
-/**
- * uvExecute is responsible for executing the function and creating data. The
- * data is then passed to uvExecuteFinished callback function for return
- */
-void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
-    DEBUG_LOG_FUNC;
-    execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
-
-#endif // NODE_VERSION_AT_LEAST (0, 6, 0)
+#endif // NODE_VERSION_AT_LEAST (0, 7, 8)
 
     assert(request);
 
@@ -930,19 +930,19 @@ void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
 #endif
 }
 
-#if NODE_VERSION_AT_LEAST(0, 6, 0)
-int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
-    DEBUG_LOG_FUNC;
-    v8::HandleScope scope;
-
-    execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
-#else
+#if NODE_VERSION_AT_LEAST(0, 7, 8)
 void nodejs_db::Query::uvExecuteFinished(uv_work_t* uvRequest, int status) {
     DEBUG_LOG_FUNC;
     v8::HandleScope scope;
 
     execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
-#endif // NODE_VERSION_AT_LEAST(0, 6, 0)
+#else
+int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
+    DEBUG_LOG_FUNC;
+    v8::HandleScope scope;
+
+    execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
+#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
 
     assert(request);
 
@@ -1040,7 +1040,16 @@ void nodejs_db::Query::uvExecuteFinished(uv_work_t* uvRequest, int status) {
         }
     }
 
+#if NODE_VERSION_AT_LEAST(0, 7, 8)
+#if NODE_VERSION_AT_LEAST(0, 7, 9)
+    uv_unref((uv_handle_t *)&g_async);
+#else // NODE_VERSION_AT_LEAST(0, 7, 9)
+    uv_unref(uv_default_loop());
+#endif
+#else
     ev_unref(EV_DEFAULT_UC);
+#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
+
     request->query->Unref();
 
     Query::freeRequest(request);
@@ -1049,7 +1058,9 @@ void nodejs_db::Query::uvExecuteFinished(uv_work_t* uvRequest, int status) {
     std::cout << std::endl;
 #endif
 
+#if !NODE_VERSION_AT_LEAST(0, 7, 8)
     return 0;
+#endif
 }
 
 /*
