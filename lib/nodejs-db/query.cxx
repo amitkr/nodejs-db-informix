@@ -822,9 +822,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
 void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
     DEBUG_LOG_FUNC;
     execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
-
 #else
-
 /**
  * eioExecute is responsible for executing the function and creating data. The
  * data is then passed to eioExecuteFinished callback function for return
