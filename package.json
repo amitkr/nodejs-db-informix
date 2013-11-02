@@ -40,7 +40,10 @@
           "nodeunit" : "*"
         , "nodelint" : "*"
     }
-    , "dependencies": {}
+    , "dependencies": {
+          "libuv"   : "0.10.18"
+        , "pthread" : "*"
+    }
     , "optionalDependencies": {}
     , "author": "Amit Kumar <amitkr@rocketmail.com> (https://github.com/amitkr)"
     , "repository": {
