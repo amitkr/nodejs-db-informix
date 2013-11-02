@@ -195,7 +195,7 @@ nodejs_db_informix::Connection::escape(const std::string& s) const throw(nodejs_
 
 std::string
 nodejs_db_informix::Connection::version() const {
-    return std::string("0.0.1");
+    return std::string("0.0.10");
 }
 
 
