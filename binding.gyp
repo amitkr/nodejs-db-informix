@@ -29,7 +29,7 @@
         , 'IT_COMPILER_HAS_LONG_LONG'
         , 'IT_DLLIB'
         , 'MITRACE_OFF'
-        , 'DEBUG'
+        # , 'DEBUG'
       ]
       , 'cflags': [
           '-Wall'
