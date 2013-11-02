@@ -303,11 +303,11 @@ nodejs_db_informix::Result::~Result() {
 
 void nodejs_db_informix::Result::free() throw() {
     this->release();
-    this->columns.clear();
-    this->columnNames.clear();
 }
 
 void nodejs_db_informix::Result::release() throw() {
+    this->columns.clear();
+    this->columnNames.clear();
 }
 
 bool nodejs_db_informix::Result::hasNext() const throw() {
@@ -346,6 +346,7 @@ nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
         throw nodejs_db::Exception("Couldn't fetch ITRow for next row");
     } else {
         long nc = r->NumColumns(); // number of columns
+        // TODO: amitkr@ don't we need to free this up at some point?
         this->colLengths = new unsigned long[nc];
         for (long i = 0; i < nc; ++i) {
             ITValue *cv = r->Column(i); // column value
