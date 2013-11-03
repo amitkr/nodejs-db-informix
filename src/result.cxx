@@ -408,7 +408,7 @@ uint64_t nodejs_db_informix::Result::count() const throw(nodejs_db::Exception&) 
 }
 
 bool nodejs_db_informix::Result::isBuffered() const throw() {
-    return false;
+    return true;
 }
 
 bool nodejs_db_informix::Result::isEmpty() const throw() {

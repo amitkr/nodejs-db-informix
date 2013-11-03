@@ -1,8 +1,18 @@
 #include "binding.h"
 
-nodejs_db::Binding::Binding(): nodejs_db::EventEmitter(), connection(NULL), cbConnect(NULL) {
-}
 
+/**
+ *
+ */
+nodejs_db::Binding::Binding() : nodejs_db::EventEmitter()
+    , connection(NULL)
+    , cbConnect(NULL)
+{}
+
+
+/**
+ *
+ */
 nodejs_db::Binding::~Binding() {
     if (this->cbConnect != NULL) {
         node::cb_destroy(this->cbConnect);
@@ -13,9 +23,13 @@ nodejs_db::Binding::~Binding() {
 uv_async_t nodejs_db::Binding::g_async;
 #endif
 
-void nodejs_db::Binding::Init(v8::Handle<v8::Object> target,
-        v8::Persistent<v8::FunctionTemplate> constructorTemplate)
-{
+
+/**
+ *
+ */
+void nodejs_db::Binding::Init(v8::Handle<v8::Object> target
+    , v8::Persistent<v8::FunctionTemplate> constructorTemplate
+) {
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_STRING,
             nodejs_db::Result::Column::STRING);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_BOOL,
@@ -43,7 +57,12 @@ void nodejs_db::Binding::Init(v8::Handle<v8::Object> target,
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "query", Query);
 }
 
-v8::Handle<v8::Value> nodejs_db::Binding::Connect(const v8::Arguments& args) {
+
+/**
+ *
+ */
+v8::Handle<v8::Value>
+nodejs_db::Binding::Connect(const v8::Arguments& args) {
     v8::HandleScope scope;
 
     nodejs_db::Binding* binding =
@@ -90,7 +109,7 @@ v8::Handle<v8::Value> nodejs_db::Binding::Connect(const v8::Arguments& args) {
 
     connect_request_t* request = new connect_request_t();
     if (request == NULL) {
-        THROW_EXCEPTION("Could not create EIO request")
+        THROW_EXCEPTION("Could not create UV request")
     }
 
     request->context = v8::Persistent<v8::Object>::New(args.This());
@@ -100,19 +119,15 @@ v8::Handle<v8::Value> nodejs_db::Binding::Connect(const v8::Arguments& args) {
     if (async) {
         request->binding->Ref();
 
-#if NODE_VERSION_AT_LEAST(0, 7, 8)
         uv_work_t* req = new uv_work_t();
         req->data = request;
         uv_queue_work(uv_default_loop(), req, uvConnect, (uv_after_work_cb)uvConnectFinished);
+
 #if NODE_VERSION_AT_LEAST(0, 7, 9)
         uv_ref((uv_handle_t *)&g_async);
 #else
         uv_ref(uv_default_loop());
 #endif // NODE_VERSION_AT_LEAST(0, 7, 9)
-#else
-        eio_custom(eioConnect, EIO_PRI_DEFAULT, eioConnectFinished, request);
-        ev_ref(EV_DEFAULT_UC);
-#endif // NODE_VERSION_AT_LEAST (0, 7, 8)
 
     } else {
         connect(request);
@@ -122,6 +137,10 @@ v8::Handle<v8::Value> nodejs_db::Binding::Connect(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
 }
 
+
+/**
+ *
+ */
 void nodejs_db::Binding::connect(connect_request_t* request) {
     try {
         request->binding->connection->open();
@@ -130,6 +149,10 @@ void nodejs_db::Binding::connect(connect_request_t* request) {
     }
 }
 
+
+/**
+ *
+ */
 void nodejs_db::Binding::connectFinished(connect_request_t* request) {
     bool connected = request->binding->connection->isAlive();
     v8::Local<v8::Value> argv[2];
@@ -164,7 +187,10 @@ void nodejs_db::Binding::connectFinished(connect_request_t* request) {
     delete request;
 }
 
-#if NODE_VERSION_AT_LEAST(0, 7, 8)
+
+/**
+ *
+ */
 void nodejs_db::Binding::uvConnect(uv_work_t* uvRequest) {
     connect_request_t* request = static_cast<connect_request_t*>(uvRequest->data);
     assert(request);
@@ -172,6 +198,10 @@ void nodejs_db::Binding::uvConnect(uv_work_t* uvRequest) {
     connect(request);
 }
 
+
+/**
+ *
+ */
 void nodejs_db::Binding::uvConnectFinished(uv_work_t* uvRequest, int status) {
     v8::HandleScope scope;
 
@@ -189,38 +219,10 @@ void nodejs_db::Binding::uvConnectFinished(uv_work_t* uvRequest, int status) {
     connectFinished(request);
 }
 
-#else
 
-#if NODE_VERSION_AT_LEAST(0, 5, 0)
-void
-#else
-int
-#endif
-nodejs_db::Binding::eioConnect(eio_req* eioRequest) {
-    connect_request_t* request = static_cast<connect_request_t*>(eioRequest->data);
-    assert(request);
-
-    connect(request);
-#if !NODE_VERSION_AT_LEAST(0, 5, 0)
-    return 0;
-#endif
-}
-
-int nodejs_db::Binding::eioConnectFinished(eio_req* eioRequest) {
-    v8::HandleScope scope;
-
-    connect_request_t* request = static_cast<connect_request_t*>(eioRequest->data);
-    assert(request);
-
-    ev_unref(EV_DEFAULT_UC);
-    request->binding->Unref();
-
-    connectFinished(request);
-
-    return 0;
-}
-#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
-
+/**
+ *
+ */
 v8::Handle<v8::Value> nodejs_db::Binding::Disconnect(const v8::Arguments& args) {
     v8::HandleScope scope;
 
@@ -232,6 +234,10 @@ v8::Handle<v8::Value> nodejs_db::Binding::Disconnect(const v8::Arguments& args) 
     return scope.Close(v8::Undefined());
 }
 
+
+/**
+ *
+ */
 v8::Handle<v8::Value> nodejs_db::Binding::IsConnected(const v8::Arguments& args) {
     v8::HandleScope scope;
 
@@ -241,6 +247,10 @@ v8::Handle<v8::Value> nodejs_db::Binding::IsConnected(const v8::Arguments& args)
     return scope.Close(binding->connection->isAlive() ? v8::True() : v8::False());
 }
 
+
+/**
+ *
+ */
 v8::Handle<v8::Value> nodejs_db::Binding::Escape(const v8::Arguments& args) {
     v8::HandleScope scope;
 
@@ -262,7 +272,12 @@ v8::Handle<v8::Value> nodejs_db::Binding::Escape(const v8::Arguments& args) {
     return scope.Close(v8::String::New(escaped.c_str()));
 }
 
-v8::Handle<v8::Value> nodejs_db::Binding::Name(const v8::Arguments& args) {
+
+/**
+ *
+ */
+v8::Handle<v8::Value>
+nodejs_db::Binding::Name(const v8::Arguments& args) {
     v8::HandleScope scope;
 
     ARG_CHECK_STRING(0, table);
@@ -283,13 +298,17 @@ v8::Handle<v8::Value> nodejs_db::Binding::Name(const v8::Arguments& args) {
     return scope.Close(v8::String::New(escaped.str().c_str()));
 }
 
+
 /**
  * Bind the query object
  */
-v8::Handle<v8::Value> nodejs_db::Binding::Query(const v8::Arguments& args) {
+v8::Handle<v8::Value>
+nodejs_db::Binding::Query(const v8::Arguments& args) {
     v8::HandleScope scope;
 
-    nodejs_db::Binding* binding = node::ObjectWrap::Unwrap<nodejs_db::Binding>(args.This());
+    nodejs_db::Binding* binding =
+        node::ObjectWrap::Unwrap<nodejs_db::Binding>(args.This());
+
     assert(binding);
 
     v8::Persistent<v8::Object> query = binding->createQuery();
@@ -297,7 +316,8 @@ v8::Handle<v8::Value> nodejs_db::Binding::Query(const v8::Arguments& args) {
         THROW_EXCEPTION("Could not create query");
     }
 
-    nodejs_db::Query* queryInstance = node::ObjectWrap::Unwrap<nodejs_db::Query>(query);
+    nodejs_db::Query* queryInstance =
+        node::ObjectWrap::Unwrap<nodejs_db::Query>(query);
     queryInstance->setConnection(binding->connection);
 
     v8::Handle<v8::Value> set = queryInstance->set(args);

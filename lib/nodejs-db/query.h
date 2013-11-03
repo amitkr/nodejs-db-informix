@@ -45,6 +45,11 @@ class Query : public EventEmitter {
             bool buffered;
             std::vector<row_t*>* rows;
         };
+        struct query_async_t {
+            v8::Persistent<v8::Object> context;
+            execute_request_t* request;
+            row_t* row;
+        };
         struct projection_clause {
             bool flag;
             uint32_t arg;
@@ -87,20 +92,10 @@ class Query : public EventEmitter {
         static v8::Handle<v8::Value> Delete(const v8::Arguments& args);
         static v8::Handle<v8::Value> Sql(const v8::Arguments& args);
         static v8::Handle<v8::Value> Execute(const v8::Arguments& args);
-#if NODE_VERSION_AT_LEAST(0, 7, 8)
         static uv_async_t g_async;
         static void uvExecute(uv_work_t* uvRequest);
+        static void uvEmitResults(uv_async_t* uvAsync, int status);
         static void uvExecuteFinished(uv_work_t* Rquest, int status);
-#else
-        static
-#if NODE_VERSION_AT_LEAST(0, 5, 0)
-        void
-#else
-        int
-#endif // NODE_VERSION_AT_LEAST(0, 5, 0)
-        eioExecute(eio_req* eioRequest);
-        static int eioExecuteFinished(eio_req* eioRequest);
-#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
         void executeAsync(execute_request_t* request);
         static void freeRequest(execute_request_t* request, bool freeAll = true);
         std::string fieldName(v8::Local<v8::Value> value) const throw(Exception&);

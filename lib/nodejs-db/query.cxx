@@ -8,7 +8,10 @@ int nodejs_db::Query::gmtDelta;
 uv_async_t nodejs_db::Query::g_async;
 #endif
 
-void nodejs_db::Query::Init(v8::Handle<v8::Object> target, v8::Persistent<v8::FunctionTemplate> constructorTemplate) {
+void
+nodejs_db::Query::Init(v8::Handle<v8::Object> target
+    , v8::Persistent<v8::FunctionTemplate> constructorTemplate
+) {
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "select",    Select);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "skip",      Skip);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "limit",     Limit);
@@ -694,7 +697,10 @@ v8::Handle<v8::Value> nodejs_db::Query::Set(const v8::Arguments& args) {
             query->sql << ",";
         }
 
-        query->sql << (escape ? query->connection->escapeName(*fieldName) : *fieldName);
+        query->sql <<
+            (escape
+             ? query->connection->escapeName(*fieldName)
+             : *fieldName);
         query->sql << "=";
         query->sql << query->value(currentValue);
     }
@@ -705,22 +711,26 @@ v8::Handle<v8::Value> nodejs_db::Query::Set(const v8::Arguments& args) {
 v8::Handle<v8::Value> nodejs_db::Query::Sql(const v8::Arguments& args) {
     v8::HandleScope scope;
 
-    nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+    nodejs_db::Query *query =
+        node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
     return scope.Close(v8::String::New(query->sql.str().c_str()));
 }
+
 
 /**
  * \fn nodejs_db::Query::Execute
  * Execute the query
  *
  */
-v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
+v8::Handle<v8::Value>
+nodejs_db::Query::Execute(const v8::Arguments& args) {
     DEBUG_LOG_FUNC;
     v8::HandleScope scope;
 
-    nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
+    nodejs_db::Query *query =
+        node::ObjectWrap::Unwrap<nodejs_db::Query>(args.This());
     assert(query);
 
     if (args.Length() > 0) {
@@ -750,7 +760,11 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
         argv[0] = v8::String::New(sql.c_str());
 
         v8::TryCatch tryCatch;
-        v8::Handle<v8::Value> result = (*(query->cbStart))->Call(v8::Context::GetCurrent()->Global(), 1, argv);
+        v8::Handle<v8::Value> result =
+            (*(query->cbStart))->Call(
+                      v8::Context::GetCurrent()->Global()
+                    , 1
+                    , argv);
         if (tryCatch.HasCaught()) {
             node::FatalException(tryCatch);
         }
@@ -771,7 +785,7 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
 
     execute_request_t *request = new execute_request_t();
     if (request == NULL) {
-        THROW_EXCEPTION("Could not create EIO request")
+        THROW_EXCEPTION("Could not create request")
     }
 
     query->sql.str("");
@@ -791,21 +805,23 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
 
     if (query->async) {
         request->query->Ref();
-#if NODE_VERSION_AT_LEAST(0, 7, 8)
         uv_work_t* req = new uv_work_t();
-        req->data = request;
-        uv_queue_work(uv_default_loop(), req, uvExecute, (uv_after_work_cb)uvExecuteFinished);
+        req->data = static_cast<void *>(request);
+        uv_async_init(
+              uv_default_loop()
+            , &g_async
+            , uvEmitResults);
+        uv_queue_work(
+              uv_default_loop()
+            , req
+            , uvExecute
+            , (uv_after_work_cb)uvExecuteFinished);
 
 #if NODE_VERSION_AT_LEAST(0, 7, 9)
         uv_ref((uv_handle_t *)&g_async);
 #else
-        uv_req(uv_default_loop());
+        uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 #endif // NODE_VERSION_AT_LEAST(0, 7, 9)
-
-#else
-        eio_custom(eioExecute, EIO_PRI_DEFAULT, eioExecuteFinished, request);
-        ev_ref(EV_DEFAULT_UC);
-#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
 
     } else {
         request->query->executeAsync(request);
@@ -814,33 +830,21 @@ v8::Handle<v8::Value> nodejs_db::Query::Execute(const v8::Arguments& args) {
     return scope.Close(v8::Undefined());
 }
 
-#if NODE_VERSION_AT_LEAST(0, 7, 8)
+
 /**
  * uvExecute is responsible for executing the function and creating data. The
  * data is then passed to uvExecuteFinished callback function for return
  */
 void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
     DEBUG_LOG_FUNC;
-    execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
-#else
-/**
- * eioExecute is responsible for executing the function and creating data. The
- * data is then passed to eioExecuteFinished callback function for return
- */
-#if NODE_VERSION_AT_LEAST(0, 5, 0)
-void
-#else
-int
-#endif // NODE_VERSION_AT_LEAST(0, 5, 0)
-nodejs_db::Query::eioExecute(eio_req* eioRequest) {
-    DEBUG_LOG_FUNC;
 
-    execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
-
-#endif // NODE_VERSION_AT_LEAST (0, 7, 8)
+    execute_request_t *request =
+           static_cast<execute_request_t *>(uvRequest->data);
 
     assert(request);
+    request->query->executeAsync(request);
 
+    /*
     try {
         request->query->connection->lock();
         request->result = request->query->execute();
@@ -863,9 +867,11 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
             // reaad vlaues from request
             request->buffered = request->result->isBuffered();
             request->columnCount = request->result->columnCount();
+
             while (request->result->hasNext()) {
                 unsigned long* columnLengths = request->result->columnLengths();
                 assert(columnLengths);
+
                 std::vector<std::string> *currentRow = request->result->next();
                 assert(currentRow);
 
@@ -874,22 +880,31 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
                 }
 
                 row_t* row = new row_t();
+
                 if (row == NULL) {
-                    throw nodejs_db::Exception("Could not create buffer for row");
+                    throw nodejs_db::Exception(
+                            "Could not create buffer for row");
                 }
 
                 if (request->buffered) {
                     row->columns = currentRow;
                     row->columnLengths = columnLengths;
                 } else {
-                    row->columnLengths = new unsigned long[request->columnCount];
+                    row->columnLengths =
+                        new unsigned long[request->columnCount];
+
                     if (row->columnLengths == NULL) {
-                        throw nodejs_db::Exception("Could not create buffer for column lengths");
+                        throw nodejs_db::Exception(
+                                "Could not create buffer for column lengths");
                     }
 
-                    row->columns = new std::vector<std::string>(size_t(request->columnCount));
+                    row->columns =
+                        new std::vector<std::string>(
+                                size_t(request->columnCount));
+
                     if (row->columns == NULL) {
-                        throw nodejs_db::Exception("Could not create buffer for columns");
+                        throw nodejs_db::Exception(
+                                "Could not create buffer for columns");
                     }
 
 #ifdef DEBUG
@@ -909,6 +924,13 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
                 }
 
                 request->rows->push_back(row);
+
+                // current row
+                query_async_t* cr = new query_async_t();
+                cr->request = request;
+                cr->row = row;
+                g_async.data = static_cast<void *>(cr);
+                uv_async_send(&g_async);
             }
 
             if (!request->result->isBuffered()) {
@@ -918,36 +940,63 @@ nodejs_db::Query::eioExecute(eio_req* eioRequest) {
             std::cout << std::endl;
 #endif
         }
+
     } catch(const nodejs_db::Exception& exception) {
         request->query->connection->unlock();
         Query::freeRequest(request, false);
         request->error = new std::string(exception.what());
     }
+    */
+
 #if !NODE_VERSION_AT_LEAST(0, 5, 0)
-    return 0;
+    return 0
 #endif
 }
 
+
 #if NODE_VERSION_AT_LEAST(0, 7, 8)
+void nodejs_db::Query::uvEmitResults(uv_async_t* uvAsync, int status) {
+    DEBUG_LOG_FUNC;
+    v8::HandleScope scope;
+
+    query_async_t* cr = static_cast<query_async_t *>(uvAsync->data);
+    assert(cr);
+
+    execute_request_t* request = cr->request;
+    assert(request);
+
+    row_t* r = cr->row;
+    assert(r);
+
+    v8::Local<v8::Object> row = request->query->row(request->result, r);
+    v8::Local<v8::Value> eachArgv[1];
+
+    eachArgv[0] = row;
+
+    request->query->Emit("each", 1, eachArgv);
+
+    delete (cr);
+
+    scope.Close(v8::Undefined());
+}
+#endif
+
+
 void nodejs_db::Query::uvExecuteFinished(uv_work_t* uvRequest, int status) {
     DEBUG_LOG_FUNC;
     v8::HandleScope scope;
 
-    execute_request_t *request = static_cast<execute_request_t *>(uvRequest->data);
-#else
-int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
-    DEBUG_LOG_FUNC;
-    v8::HandleScope scope;
-
-    execute_request_t *request = static_cast<execute_request_t *>(eioRequest->data);
-#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
+    execute_request_t *request =
+        static_cast<execute_request_t *>(uvRequest->data);
 
     assert(request);
 
 #ifdef DEBUG
     std::cout << "result ";
 #endif
+
     if (request->error == NULL && request->result != NULL) {
+
 #ifdef DEBUG
         std::cout << "is not null";
 #endif
@@ -973,12 +1022,16 @@ int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
                     ++iterator, index++)
             {
                 row_t* currentRow = *iterator;
-                v8::Local<v8::Object> row = request->query->row(request->result, currentRow);
+                v8::Local<v8::Object> row =
+                    request->query->row(request->result, currentRow);
                 v8::Local<v8::Value> eachArgv[3];
 
                 eachArgv[0] = row;
                 eachArgv[1] = v8::Number::New(index);
-                eachArgv[2] = v8::Local<v8::Value>::New((index == totalRows - 1) ? v8::True() : v8::False());
+                eachArgv[2] = v8::Local<v8::Value>::New(
+                        (index == totalRows - 1)
+                            ? v8::True()
+                            : v8::False());
 
                 request->query->Emit("each", 3, eachArgv);
 
@@ -1030,6 +1083,7 @@ int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
         }
     }
 
+
     if (request->query->cbFinish != NULL && !request->query->cbFinish->IsEmpty()) {
         v8::TryCatch tryCatch;
         (*(request->query->cbFinish))->Call(v8::Context::GetCurrent()->Global(), 0, NULL);
@@ -1038,28 +1092,28 @@ int nodejs_db::Query::eioExecuteFinished(eio_req* eioRequest) {
         }
     }
 
-#if NODE_VERSION_AT_LEAST(0, 7, 8)
 #if NODE_VERSION_AT_LEAST(0, 7, 9)
-    uv_unref((uv_handle_t *)&g_async);
+    // uv_unref((uv_handle_t *)&g_async);
+    uv_close((uv_handle_t*)&g_async, NULL);
 #else // NODE_VERSION_AT_LEAST(0, 7, 9)
     uv_unref(uv_default_loop());
 #endif
-#else
-    ev_unref(EV_DEFAULT_UC);
-#endif // NODE_VERSION_AT_LEAST(0, 7, 8)
 
     request->query->Unref();
 
-    Query::freeRequest(request);
+    Query::freeRequest(request, true);
 
 #ifdef DEBUG
     std::cout << std::endl;
 #endif
 
 #if !NODE_VERSION_AT_LEAST(0, 7, 8)
-    return 0;
+    return scope.Close(v8::Undefined());
+#else
+    scope.Close(v8::Undefined());
 #endif
 }
+
 
 /*
  *
@@ -1093,8 +1147,10 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
 #endif
                 request->columnCount = request->result->columnCount();
 
-                v8::Local<v8::Array> columns = v8::Array::New(request->columnCount);
+                v8::Local<v8::Array> columns =
+                    v8::Array::New(request->columnCount);
                 v8::Local<v8::Array> rows;
+
                 try {
                     rows = v8::Array::New(request->result->count());
                 } catch(const nodejs_db::Exception& exception) {
@@ -1102,11 +1158,13 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                 }
 
 #ifdef DEBUG
-                std::cout << ", columnCount " << request->columnCount << std::endl;
+                std::cout << ", columnCount "
+                    << request->columnCount << std::endl;
 #endif
                 /* setup the columns */
                 for (uint16_t i = 0; i < request->columnCount; i++) {
-                    nodejs_db::Result::Column *currentColumn = request->result->column(i);
+                    nodejs_db::Result::Column *currentColumn =
+                        request->result->column(i);
 
 #ifdef DEBUG
                     std::cout
@@ -1117,8 +1175,11 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
 #endif
 
                     v8::Local<v8::Object> column = v8::Object::New();
-                    column->Set(v8::String::New("name"), v8::String::New(currentColumn->getName().c_str()));
-                    column->Set(v8::String::New("type"), NODE_CONSTANT(currentColumn->getType()));
+                    column->Set(v8::String::New("name")
+                            , v8::String::New(
+                                currentColumn->getName().c_str()));
+                    column->Set(v8::String::New("type")
+                            , NODE_CONSTANT(currentColumn->getType()));
 
                     columns->Set(i, column);
                 }
@@ -1135,7 +1196,9 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
                     std::cout << "Row: " << index;
 #endif
 
-                    row.columnLengths = static_cast<unsigned long*>(request->result->columnLengths());
+                    row.columnLengths =
+                        static_cast<unsigned long*>(
+                                request->result->columnLengths());
                     row.columns = request->result->next();
 
 #ifdef DEBUG
@@ -1228,38 +1291,56 @@ nodejs_db::Result* nodejs_db::Query::execute() const throw(nodejs_db::Exception&
 
 void nodejs_db::Query::freeRequest(execute_request_t* request, bool freeAll) {
     DEBUG_LOG_FUNC;
+
     /*
     if (request->rows != NULL) {
-        for (std::vector<row_t*>::iterator iterator = request->rows->begin(), end = request->rows->end(); iterator != end; ++iterator) {
+        for (std::vector<row_t*>::iterator iterator = request->rows->begin()
+            , end = request->rows->end()
+            ; iterator != end; ++iterator
+        ) {
             row_t* row = *iterator;
+            assert(row);
+
             if (!request->buffered) {
-                delete row->columns;
+                if (row->columns) { delete row->columns; }
+                if (row->columnLengths) { delete [] row->columnLengths; }
             }
-            delete [] row->columnLengths;
             delete row;
         }
         delete request->rows;
     }
     */
 
+    // delete request->rows;
+
     if (request->error != NULL) {
         delete request->error;
     }
 
     if (freeAll) {
-        if (request->result != NULL) {
-            delete request->result;
-        }
+        /*
+        if (request->query != NULL) { delete request->query; }
+        */
+        if (request->result != NULL) { delete request->result; }
 
         request->context.Dispose();
-
         delete request;
     }
 }
 
 
+/**
+ *
+ */
+v8::Handle<v8::Value>
+nodejs_db::Query::set(const v8::Arguments& args) {
 
-v8::Handle<v8::Value> nodejs_db::Query::set(const v8::Arguments& args) {
+    /* don't proceed if connection doesn't exists */
+    if (!this->connection) {
+        THROW_EXCEPTION("No connection. Did you attempt to create new query "
+                "without connection?");
+    }
+
     if (args.Length() == 0) {
         return v8::Handle<v8::Value>();
     }
@@ -1386,7 +1467,9 @@ v8::Handle<v8::Value> nodejs_db::Query::set(const v8::Arguments& args) {
     return v8::Handle<v8::Value>();
 }
 
-std::string nodejs_db::Query::fieldName(v8::Local<v8::Value> v) const throw(nodejs_db::Exception&) {
+std::string
+nodejs_db::Query::fieldName(v8::Local<v8::Value> v)
+const throw(nodejs_db::Exception&) {
     DEBUG_LOG_FUNC;
     std::string buffer;
 
@@ -1457,7 +1540,12 @@ std::string nodejs_db::Query::fieldName(v8::Local<v8::Value> v) const throw(node
     return buffer;
 }
 
-std::string nodejs_db::Query::tableName(v8::Local<v8::Value> value, bool escape) const throw(nodejs_db::Exception&) {
+
+std::string
+nodejs_db::Query::tableName(
+      v8::Local<v8::Value> value
+    , bool escape
+) const throw(nodejs_db::Exception&) {
     DEBUG_LOG_FUNC;
     std::string buffer;
 
@@ -1503,7 +1591,12 @@ std::string nodejs_db::Query::tableName(v8::Local<v8::Value> value, bool escape)
     return buffer;
 }
 
-v8::Handle<v8::Value> nodejs_db::Query::addCondition(const v8::Arguments& args, const char* separator) {
+
+v8::Handle<v8::Value>
+nodejs_db::Query::addCondition(
+      const v8::Arguments& args
+    , const char* separator
+) {
     DEBUG_LOG_FUNC;
     ARG_CHECK_STRING(0, conditions);
     ARG_CHECK_OPTIONAL_ARRAY(1, values);
@@ -1522,6 +1615,7 @@ v8::Handle<v8::Value> nodejs_db::Query::addCondition(const v8::Arguments& args, 
 
     return args.This();
 }
+
 
 v8::Local<v8::Object>
 nodejs_db::Query::row(
@@ -1700,8 +1794,12 @@ const throw(nodejs_db::Exception&) {
     uint32_t delta = 0;
 
     *parsed = query;
+    assert(parsed);
 
-    for (std::string::size_type i = 0, limiti = query.length(); i < limiti; i++) {
+    for (std::string::size_type i = 0, limiti = query.length()
+            ; i < limiti
+            ; i++
+    ) {
         char currentChar = query[i];
         if (escaped) {
             if (currentChar == '?') {

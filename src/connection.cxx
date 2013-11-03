@@ -195,7 +195,7 @@ nodejs_db_informix::Connection::escape(const std::string& s) const throw(nodejs_
 
 std::string
 nodejs_db_informix::Connection::version() const {
-    return std::string("0.0.10");
+    return std::string("0.0.11");
 }
 
 
@@ -259,7 +259,9 @@ _QueryErrorHandler(
  * execute select query
  */
 nodejs_db::Result*
-nodejs_db_informix::Connection::query(const std::string& query) const throw(nodejs_db::Exception&) {
+nodejs_db_informix::Connection::query(
+    const std::string& query
+) const throw(nodejs_db::Exception&) {
 
 #ifdef DEV
     this->_testExecForIteration();
@@ -307,7 +309,9 @@ nodejs_db_informix::Connection::query(const std::string& query) const throw(node
  * Therefore, we need a new function
  */
 nodejs_db::Result*
-nodejs_db_informix::Connection::query_x(const std::string& query) const throw(nodejs_db::Exception&) {
+nodejs_db_informix::Connection::query_x(
+    const std::string& query
+) const throw(nodejs_db::Exception&) {
     ITQuery q(*(this->connection));
 
     q.AddCallback(_QueryErrorHandler, (void*) &std::cerr);

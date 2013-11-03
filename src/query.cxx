@@ -1,6 +1,7 @@
 #include "query.h"
 
-v8::Persistent<v8::FunctionTemplate> nodejs_db_informix::Query::constructorTemplate;
+v8::Persistent<v8::FunctionTemplate>
+    nodejs_db_informix::Query::constructorTemplate;
 
 void nodejs_db_informix::Query::Init(v8::Handle<v8::Object> target) {
     v8::HandleScope scope;
@@ -12,13 +13,15 @@ void nodejs_db_informix::Query::Init(v8::Handle<v8::Object> target) {
 
     nodejs_db::Query::Init(target, constructorTemplate);
 
-    target->Set(v8::String::NewSymbol("Query"), constructorTemplate->GetFunction());
+    target->Set(v8::String::NewSymbol("Query")
+            , constructorTemplate->GetFunction());
 }
 
 /**
  * Constructor Template
  */
-v8::Handle<v8::Value> nodejs_db_informix::Query::New(const v8::Arguments& args) {
+v8::Handle<v8::Value>
+nodejs_db_informix::Query::New(const v8::Arguments& args) {
     v8::HandleScope scope;
 
     nodejs_db_informix::Query* query = new nodejs_db_informix::Query();

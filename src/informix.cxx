@@ -26,7 +26,9 @@ void nodejs_db_informix::Informix::Init(v8::Handle<v8::Object> target) {
     target->Set(v8::String::NewSymbol("Informix"), constructorTemplate->GetFunction());
 }
 
-v8::Handle<v8::Value> nodejs_db_informix::Informix::New(const v8::Arguments& args) {
+
+v8::Handle<v8::Value>
+nodejs_db_informix::Informix::New(const v8::Arguments& args) {
     v8::HandleScope scope;
 
     nodejs_db_informix::Informix* binding = new nodejs_db_informix::Informix();
