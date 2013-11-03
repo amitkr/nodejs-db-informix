@@ -49,7 +49,7 @@ c.on('error', function(error) {
                     console.log('Finish:');
                     console.log(f);
                 }
-                , async: true
+                , async: false
                 , cast: true
             }
         )
@@ -75,7 +75,7 @@ c.on('error', function(error) {
                     console.log('Finish:');
                     console.log(f);
                 }
-                , async: true
+                , async: false
                 , cast: true
             }
         )
