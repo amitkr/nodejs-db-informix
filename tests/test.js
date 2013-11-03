@@ -36,9 +36,11 @@ c.on('error', function(error) {
         .query(
               ""
             , []
-            , function () {
+            , function (status, results) {
                 console.log('CALLBACK:');
-                console.log(arguments);
+                // console.log(arguments);
+                console.log("status:" + status);
+                console.log(results);
             }
             , {
                 start: function(q) {
@@ -62,9 +64,11 @@ c.on('error', function(error) {
         .query(
               ""
             , []
-            , function () {
+            , function (status, results) {
                 console.log('CALLBACK:');
-                console.log(arguments);
+                // console.log(arguments);
+                console.log("status:" + status);
+                console.log(results);
             }
             , {
                 start: function(q) {

@@ -39,8 +39,7 @@ bee.prototype.emit = function() {
                 || (Array.isArray(this._events.error)
                     && !this._events.error.length)
                )
-       )
-    {
+    ) {
         // Silently allow unattached error events
         return;
     }
