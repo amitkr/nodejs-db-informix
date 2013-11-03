@@ -12,7 +12,7 @@
         , "csdk"
     ]
     , "homepage": "https://github.com/amitkr/nodejs-db-informix"
-    , "version": "0.0.10"
+    , "version": "0.0.11"
     , "engines": {
         "node" : ">=0.6.12"
     }
@@ -25,10 +25,6 @@
         , "email": "amikr@rocketmail.com"
     }
     , "licenses": [{ "type": "MIT" }]
-    , "repositories": [{
-          "type": "git"
-        , "url": "https://github.com/amitkr/nodejs-db-informix.git"
-    }]
     , "main": "./nodejs-db-informix"
     , "scripts": {
           "install": "node-gyp configure build"
@@ -41,10 +37,11 @@
         , "nodelint" : "*"
     }
     , "dependencies": {
+    }
+    , "optionalDependencies": {
           "libuv"   : "0.10.18"
         , "pthread" : "*"
     }
-    , "optionalDependencies": {}
     , "author": "Amit Kumar <amitkr@rocketmail.com> (https://github.com/amitkr)"
     , "repository": {
         "type": "git",
