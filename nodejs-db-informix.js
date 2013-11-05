@@ -14,8 +14,8 @@ try {
 }
 
 /*
- * @function extend(t, s) Extends the target class @c t with all the prototypes of
- * class @c s.
+ * @function extend(t, s) Extends the target class @c t with all the prototypes
+ * of class @c s.
  * @param {Object} t target object
  * @param {Object} s source object
  */
@@ -34,11 +34,11 @@ bee.prototype.emit = function() {
     var type = arguments[0];
 
     if (type === 'error'
-            && (!this._events
-                || !this._events.error
-                || (Array.isArray(this._events.error)
-                    && !this._events.error.length)
-               )
+        && (!this._events
+            || !this._events.error
+            || (Array.isArray(this._events.error)
+                && !this._events.error.length)
+           )
     ) {
         // Silently allow unattached error events
         return;
