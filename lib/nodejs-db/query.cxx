@@ -807,10 +807,12 @@ nodejs_db::Query::Execute(const v8::Arguments& args) {
         request->query->Ref();
         uv_work_t* req = new uv_work_t();
         req->data = static_cast<void *>(request);
+        /*
         uv_async_init(
               uv_default_loop()
             , &g_async
             , uvEmitResults);
+        */
         uv_queue_work(
               uv_default_loop()
             , req
@@ -842,9 +844,7 @@ void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
            static_cast<execute_request_t *>(uvRequest->data);
 
     assert(request);
-    request->query->executeAsync(request);
 
-    /*
     try {
         request->query->connection->lock();
         request->result = request->query->execute();
@@ -926,11 +926,13 @@ void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
                 request->rows->push_back(row);
 
                 // current row
+                /*
                 query_async_t* cr = new query_async_t();
                 cr->request = request;
                 cr->row = row;
                 g_async.data = static_cast<void *>(cr);
                 uv_async_send(&g_async);
+                */
             }
 
             if (!request->result->isBuffered()) {
@@ -946,7 +948,6 @@ void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
         Query::freeRequest(request, false);
         request->error = new std::string(exception.what());
     }
-    */
 
 #if !NODE_VERSION_AT_LEAST(0, 5, 0)
     return 0
@@ -1093,8 +1094,8 @@ void nodejs_db::Query::uvExecuteFinished(uv_work_t* uvRequest, int status) {
     }
 
 #if NODE_VERSION_AT_LEAST(0, 7, 9)
-    // uv_unref((uv_handle_t *)&g_async);
-    uv_close((uv_handle_t*)&g_async, NULL);
+    uv_unref((uv_handle_t *)&g_async);
+    // uv_close((uv_handle_t*)&g_async, NULL);
 #else // NODE_VERSION_AT_LEAST(0, 7, 9)
     uv_unref(uv_default_loop());
 #endif
