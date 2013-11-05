@@ -13,7 +13,7 @@ nodejs_db_informix::Informix::~Informix() {
     }
 }
 
-void nodejs_db_informix::Informix::Init(v8::Handle<v8::Object> target) {
+void nodejs_db_informix::Informix::Init(v8::Handle<v8::Object> exports) {
     v8::HandleScope scope;
 
     v8::Local<v8::FunctionTemplate> t = v8::FunctionTemplate::New(New);
@@ -21,9 +21,10 @@ void nodejs_db_informix::Informix::Init(v8::Handle<v8::Object> target) {
     constructorTemplate = v8::Persistent<v8::FunctionTemplate>::New(t);
     constructorTemplate->InstanceTemplate()->SetInternalFieldCount(1);
 
-    nodejs_db::Binding::Init(target, constructorTemplate);
+    nodejs_db::Binding::Init(exports, constructorTemplate);
 
-    target->Set(v8::String::NewSymbol("Informix"), constructorTemplate->GetFunction());
+    exports->Set(v8::String::NewSymbol("Informix")
+            , constructorTemplate->GetFunction());
 }
 
 
@@ -50,9 +51,9 @@ nodejs_db_informix::Informix::New(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
-v8::Handle<v8::Value> nodejs_db_informix::Informix::set(const
-        v8::Local<v8::Object> options)
-{
+v8::Handle<v8::Value> nodejs_db_informix::Informix::set(
+    const v8::Local<v8::Object> options
+) {
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, hostname);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, user);
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, password);

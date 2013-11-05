@@ -353,7 +353,7 @@ nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
             if (cv->IsNull()) {
                 // append null
                 row->push_back(std::string("null"));
-                this->colLengths[i] = strlen("null");
+                this->colLengths[i] = std::string("null").length();
             } else {
                 row->push_back(std::string(cv->Printable().Data()));
                 this->colLengths[i] = cv->Printable().Length();

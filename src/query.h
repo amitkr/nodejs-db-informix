@@ -8,7 +8,7 @@ namespace nodejs_db_informix {
 class Query : public nodejs_db::Query {
     public:
         static v8::Persistent<v8::FunctionTemplate> constructorTemplate;
-        static void Init(v8::Handle<v8::Object> target);
+        static void Init(v8::Handle<v8::Object> exports);
 
     protected:
         static v8::Handle<v8::Value> New(const v8::Arguments& args);

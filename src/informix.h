@@ -9,7 +9,7 @@
 namespace nodejs_db_informix {
 class Informix : public nodejs_db::Binding {
     public:
-        static void Init(v8::Handle<v8::Object> target);
+        static void Init(v8::Handle<v8::Object> exports);
 
     protected:
         static v8::Persistent<v8::FunctionTemplate> constructorTemplate;

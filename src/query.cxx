@@ -3,7 +3,7 @@
 v8::Persistent<v8::FunctionTemplate>
     nodejs_db_informix::Query::constructorTemplate;
 
-void nodejs_db_informix::Query::Init(v8::Handle<v8::Object> target) {
+void nodejs_db_informix::Query::Init(v8::Handle<v8::Object> exports) {
     v8::HandleScope scope;
 
     v8::Local<v8::FunctionTemplate> t = v8::FunctionTemplate::New(New);
@@ -11,9 +11,9 @@ void nodejs_db_informix::Query::Init(v8::Handle<v8::Object> target) {
     constructorTemplate = v8::Persistent<v8::FunctionTemplate>::New(t);
     constructorTemplate->InstanceTemplate()->SetInternalFieldCount(1);
 
-    nodejs_db::Query::Init(target, constructorTemplate);
+    nodejs_db::Query::Init(exports, constructorTemplate);
 
-    target->Set(v8::String::NewSymbol("Query")
+    exports->Set(v8::String::NewSymbol("Query")
             , constructorTemplate->GetFunction());
 }
 
