@@ -83,7 +83,6 @@ c.on('error', function(error) {
         .select("*")
         .first(10)
         .from("systables", false)
-        .orderby("desc")
         .execute();
 
     console.log(rs);
