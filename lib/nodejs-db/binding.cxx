@@ -25,6 +25,7 @@ uv_async_t nodejs_db::Binding::g_async;
 
 
 /**
+ * \fn Initialise the constructor for Bindings.
  *
  */
 void nodejs_db::Binding::Init(v8::Handle<v8::Object> target
@@ -32,22 +33,34 @@ void nodejs_db::Binding::Init(v8::Handle<v8::Object> target
 ) {
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_STRING,
             nodejs_db::Result::Column::STRING);
-    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_BOOL,
-            nodejs_db::Result::Column::BOOL);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_TEXT,
+            nodejs_db::Result::Column::TEXT);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_INT,
             nodejs_db::Result::Column::INT);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_NUMBER,
             nodejs_db::Result::Column::NUMBER);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_MONEY,
+            nodejs_db::Result::Column::MONEY);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_DATE,
             nodejs_db::Result::Column::DATE);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_TIME,
             nodejs_db::Result::Column::TIME);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_INTERVAL,
+            nodejs_db::Result::Column::INTERVAL);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_DATETIME,
             nodejs_db::Result::Column::DATETIME);
-    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_TEXT,
-            nodejs_db::Result::Column::TEXT);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_BOOL,
+            nodejs_db::Result::Column::BOOL);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_BLOB,
+            nodejs_db::Result::Column::BLOB);
     NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_SET,
             nodejs_db::Result::Column::SET);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_ROW,
+            nodejs_db::Result::Column::ROW);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_COLLECTION,
+            nodejs_db::Result::Column::COLLECTION);
+    NODE_ADD_CONSTANT(constructorTemplate, COLUMN_TYPE_CONSTRUCTED,
+            nodejs_db::Result::Column::CONSTRUCTED);
 
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "connect", Connect);
     NODE_ADD_PROTOTYPE_METHOD(constructorTemplate, "disconnect", Disconnect);
