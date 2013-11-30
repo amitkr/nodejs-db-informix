@@ -976,7 +976,7 @@ void nodejs_db::Query::uvEmitResults(uv_async_t* uvAsync, int status) {
 
     request->query->Emit("each", 1, eachArgv);
 
-    delete (cr);
+    // delete (cr);
 
     scope.Close(v8::Undefined());
 }
@@ -1321,11 +1321,11 @@ void nodejs_db::Query::freeRequest(execute_request_t* request, bool freeAll) {
     if (freeAll) {
         /*
         if (request->query != NULL) { delete request->query; }
-        */
         if (request->result != NULL) { delete request->result; }
+        */
 
         request->context.Dispose();
-        delete request;
+        // delete request;
     }
 }
 

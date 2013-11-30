@@ -197,7 +197,7 @@ void nodejs_db::Binding::connectFinished(connect_request_t* request) {
 
     request->context.Dispose();
 
-    delete request;
+    // delete request;
 }
 
 
