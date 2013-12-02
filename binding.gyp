@@ -2,7 +2,9 @@
   'targets': [
     {
         'target_name': 'informix_bindings'
-      , 'informixdir': '<!(echo ${INFORMIXDIR:-/opt/informix})'
+      , 'variables': {
+          'informixdir': '<!(echo ${INFORMIXDIR:-/opt/informix})'
+      }
       , 'sources': [
               'lib/nodejs-db/binding.cxx'
             , 'lib/nodejs-db/connection.cxx'
@@ -17,10 +19,10 @@
             , 'src/informix_bindings.cxx'
       ]
       , 'include_dirs': [
-          '<!(echo $INFORMIXDIR/incl)'
-        , '<!(echo $INFORMIXDIR/incl/dmi)'
-        , '<!(echo $INFORMIXDIR/incl/esql)'
-        , '<!(echo $INFORMIXDIR/incl/c++)'
+          '<@(informixdir)/incl'
+        , '<@(informixdir)/incl/dmi'
+        , '<@(informixdir)/incl/esql'
+        , '<@(informixdir)/incl/c++'
         , 'lib'
       ]
       , 'defines': [
@@ -34,6 +36,7 @@
       , 'cflags': [
           '-Wall'
         , '-g'
+        , '-O0'
         , '-fsigned-char'
       ]
       , 'cflags_cc': [
@@ -41,34 +44,35 @@
         , '-std=c++11'
       ]
       , 'ldflags': [
-          '-lpthread'
+          '-Wl,--no-as-needed'
+        , '-lpthread'
         , '-lm'
         , '-ldl'
         , '-lcrypt'
         , '-lnsl'
-        # , '-lgls'
         , '-lifgls'
-        # , '-lglx'
         , '-lifglx'
-        # , '-lifsql'
         , '-lthsql'
-        # , '-lifasf'
         , '-lthasf'
-        # , '-lifgen'
         , '-lthgen'
-        # , '-lifos'
         , '-lthos'
-        # , '-lifc++'
         , '-lthc++'
-        # , '-lifdmi'
         , '-lthdmi'
-        , '<!(echo $INFORMIXDIR/lib/esql/checkapi.o)'
+        # , '-lgls'
+        # , '-lglx'
+        # , '-lifsql'
+        # , '-lifasf'
+        # , '-lifgen'
+        # , '-lifos'
+        # , '-lifc++'
+        # , '-lifdmi'
+        , '<@(informixdir)/lib/esql/checkapi.o'
       ]
       , 'libraries': [
-          '-L<!(echo $INFORMIXDIR/lib)'
-        , '-L<!(echo $INFORMIXDIR/lib/esql)'
-        , '-L<!(echo $INFORMIXDIR/lib/dmi)'
-        , '-L<!(echo $INFORMIXDIR/lib/c++)'
+          '-L<@(informixdir)/lib'
+        , '-L<@(informixdir)/lib/esql'
+        , '-L<@(informixdir)/lib/dmi'
+        , '-L<@(informixdir)/lib/c++'
       ]
       , 'conditions': [
           ['OS=="win"'
