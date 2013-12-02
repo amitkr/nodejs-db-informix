@@ -1291,6 +1291,26 @@ void nodejs_db::Query::executeAsync(execute_request_t* request) {
  * execute the SQL query
  */
 nodejs_db::Result* nodejs_db::Query::execute() const throw(nodejs_db::Exception&) {
+    /*
+    switch (this->sqlType) {
+        case Query::NONE:
+        case Query::SELECT:
+            return this->connection->query(this->sql.str());
+        case Query::INSERT:
+        case Query::UPDATE:
+        case Query::DELETE:
+            return this->connection->query_x(this->sql.str());
+        default:
+            return this->connection->query(this->sql.str());
+    }
+    */
+
+    if (this->sqlType == Query::NONE
+            || this->sqlType == Query::SELECT
+    ) {
+        return this->connection->query(this->sql.str());
+    }
+
     if (this->sqlType != Query::SELECT) {
         return this->connection->query_x(this->sql.str());
     }
@@ -1859,7 +1879,6 @@ throw(nodejs_db::Exception&) {
     size_t pos = s.find(select);
     if (pos == std::string::npos) {
         /* silently ignore perhaps this is not a select query */
-        // throw nodejs_db::Exception("No SELECT clause found in the query");
         return;
     }
 
@@ -1874,10 +1893,9 @@ throw(nodejs_db::Exception&) {
         const std::string limitStr = " LIMIT ";
 
         ss << limitStr << this->projection.limit.arg;
-    }
-    else
-    if (this->projection.first.flag) {
+    } else if (this->projection.first.flag) {
         const std::string firstStr = " FIRST ";
+
         ss << firstStr << this->projection.first.arg;
     }
 
