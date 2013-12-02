@@ -35,8 +35,8 @@
       ]
       , 'cflags': [
           '-Wall'
-        , '-g'
-        , '-O0'
+        # , '-g'
+        , '-O2'
         , '-fsigned-char'
       ]
       , 'cflags_cc': [
