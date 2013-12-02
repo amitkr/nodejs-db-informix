@@ -329,6 +329,10 @@ nodejs_db_informix::Connection::query(
     this->_testExecForIteration();
 #endif
 
+#ifdef DEBUG
+    std::cout << "nodejs_db_informix::Connection::query" << std::endl;
+#endif
+
     ITQuery q(*(this->connection));
 
     q.AddCallback(_QueryErrorHandler, (void*) &std::cerr);
@@ -374,6 +378,9 @@ nodejs_db::Result*
 nodejs_db_informix::Connection::query_x(
     const std::string& query
 ) const throw(nodejs_db::Exception&) {
+#ifdef DEBUG
+    std::cout << "nodejs_db_informix::Connection::query_x" << std::endl;
+#endif
     ITQuery q(*(this->connection));
 
     q.AddCallback(_QueryErrorHandler, (void*) &std::cerr);
