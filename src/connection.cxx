@@ -356,7 +356,7 @@ nodejs_db_informix::Connection::query(
                 ;
         }
 
-        err << "msg: Could not execute query: " << query;
+        err << "Could not execute query: " << query;
         throw nodejs_db::Exception(err.str());
     }
 
@@ -401,7 +401,7 @@ nodejs_db_informix::Connection::query_x(
                 ;
         }
 
-        err << "msg: Could not execute query.";
+        err << "Could not execute query.";
         throw nodejs_db::Exception(err.str());
     }
 
