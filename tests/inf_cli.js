@@ -73,6 +73,7 @@ function connect(settings) {
         }).execute();
         */
 
+        /*
         var rs = this
                 .query(
                       "SELECT FIRST 10 * FROM systables"
@@ -97,6 +98,7 @@ function connect(settings) {
                     }
                 )
                 .execute();
+        */
 
         /*
         var rs = this
