@@ -846,9 +846,16 @@ void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
     assert(request);
 
     try {
+        if (request == NULL
+                || request->query == NULL
+                || request->query->connection == NULL
+                || !request->query->connection->isAlive()
+        ) {
+            throw nodejs_db::Exception("No open connection");
+        }
+
         request->query->connection->lock();
         request->result = request->query->execute();
-        request->query->connection->unlock();
 
 #ifdef DEBUG
         std::cout << "Result is ";
@@ -898,6 +905,8 @@ void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
                                 "Could not create buffer for column lengths");
                     }
 
+                    // pvmagacho - removed size initializer.
+                    // amitkr - why?
                     row->columns =
                         new std::vector<std::string>(
                                 size_t(request->columnCount));
@@ -943,6 +952,7 @@ void nodejs_db::Query::uvExecute(uv_work_t* uvRequest) {
 #endif
         }
 
+        request->query->connection->unlock();
     } catch(const nodejs_db::Exception& exception) {
         request->query->connection->unlock();
         Query::freeRequest(request, false);
@@ -976,7 +986,7 @@ void nodejs_db::Query::uvEmitResults(uv_async_t* uvAsync, int status) {
 
     request->query->Emit("each", 1, eachArgv);
 
-    // delete (cr);
+    delete (cr);
 
     scope.Close(v8::Undefined());
 }
@@ -1321,11 +1331,13 @@ void nodejs_db::Query::freeRequest(execute_request_t* request, bool freeAll) {
     if (freeAll) {
         /*
         if (request->query != NULL) { delete request->query; }
-        if (request->result != NULL) { delete request->result; }
         */
 
+        if (request->result != NULL) { delete request->result; }
+
         request->context.Dispose();
-        // delete request;
+
+        delete request;
     }
 }
 
@@ -1829,7 +1841,9 @@ const throw(nodejs_db::Exception&) {
 
 
 /**
- * assuming that this function will be called only once and none of the
+ * \fn nodejs_db::Query::addProjections
+ * \breif Add projection clauses into the query.
+ * Assuming that this function will be called only once and none of the
  * projection clauses are present into the query
  */
 void
@@ -1880,16 +1894,17 @@ throw(nodejs_db::Exception&) {
  * \breif Parse the sql
  */
 std::string
-nodejs_db::Query::parseQuery()
-const throw(nodejs_db::Exception&) {
+nodejs_db::Query::parseQuery() const throw(nodejs_db::Exception&) {
     DEBUG_LOG_FUNC;
 
     std::string parsed;
-    std::vector<std::string::size_type> positions = this->placeholders(&parsed);
+    // p - positions
+    std::vector<std::string::size_type> p
+        = this->placeholders(&parsed);
 
     uint32_t index = 0, delta = 0;
-    for (std::vector<std::string::size_type>::iterator iterator = positions.begin()
-            , end = positions.end()
+    for (std::vector<std::string::size_type>::iterator iterator = p.begin()
+            , end = p.end()
             ; iterator != end
             ; ++iterator
             , index++)
@@ -1897,7 +1912,9 @@ const throw(nodejs_db::Exception&) {
         std::string v = this->value(*(this->values[index]));
 
         if(!v.length()) {
-            throw nodejs_db::Exception("Internal error, attempting to replace with zero length value");
+            throw nodejs_db::Exception(
+                "Internal error, attempting to replace with zero length\
+                value");
         }
 
         parsed.replace(*iterator + delta, 1, v);
@@ -1940,7 +1957,10 @@ nodejs_db::Query::value(
             currentStream << ')';
         }
     } else if (v->IsDate()) {
-        currentStream << this->connection->quoteString << this->fromDate(v8::Date::Cast(*v)->NumberValue()) << this->connection->quoteString;
+        currentStream
+            << this->connection->quoteString
+            << this->fromDate(v8::Date::Cast(*v)->NumberValue())
+            << this->connection->quoteString;
     } else if (v->IsObject()) {
         v8::Local<v8::Object> object = v->ToObject();
         v8::Handle<v8::String> valueKey = v8::String::New("value");
@@ -1953,8 +1973,12 @@ nodejs_db::Query::value(
 
             if (object->Has(precisionKey)) {
                 v8::Local<v8::Value> optionValue = object->Get(precisionKey);
-                if (!optionValue->IsNumber() || optionValue->IntegerValue() < 0) {
-                    throw new nodejs_db::Exception("Specify a number equal or greater than 0 for precision");
+                if (!optionValue->IsNumber()
+                        || optionValue->IntegerValue() < 0
+                ) {
+                    throw new nodejs_db::Exception(
+                        "Specify a number equal or greater than 0 for\
+                        precision");
                 }
                 p = optionValue->IntegerValue();
             }
@@ -1963,18 +1987,23 @@ nodejs_db::Query::value(
             if (object->Has(escapeKey)) {
                 v8::Local<v8::Value> escapeValue = object->Get(escapeKey);
                 if (!escapeValue->IsBoolean()) {
-                    throw nodejs_db::Exception("Specify a valid boolean value for the \"escape\" option in the select field object");
+                    throw nodejs_db::Exception(
+                        "Specify a valid boolean value for the \"escape\"\
+                        option in the select field object");
                 }
                 innerEscape = escapeValue->IsTrue();
             }
-            currentStream << this->value(object->Get(valueKey), false, innerEscape, p);
+            currentStream
+                << this->value(object->Get(valueKey), false, innerEscape, p);
         } else {
             v8::Handle<v8::String> sqlKey = v8::String::New("sql");
             if (!object->Has(sqlKey) || !object->Get(sqlKey)->IsFunction()) {
-                throw nodejs_db::Exception("Objects can't be converted to a SQL value");
+                throw nodejs_db::Exception(
+                        "Objects can't be converted to a SQL value");
             }
 
-            nodejs_db::Query *query = node::ObjectWrap::Unwrap<nodejs_db::Query>(object);
+            nodejs_db::Query *query =
+                node::ObjectWrap::Unwrap<nodejs_db::Query>(object);
             assert(query);
             if (escape) {
                 currentStream << "(";
@@ -1986,31 +2015,45 @@ nodejs_db::Query::value(
         }
     } else if (v->IsBoolean()) {
         currentStream << (v->IsTrue() ? '1' : '0');
-    } else if (v->IsUint32() || v->IsInt32() || (v->IsNumber() && v->NumberValue() == v->IntegerValue())) {
+    } else if (
+           v->IsUint32()
+        || v->IsInt32()
+        || (v->IsNumber() && v->NumberValue() == v->IntegerValue())
+    ) {
         currentStream << v->IntegerValue();
     } else if (v->IsNumber()) {
         if (precision == -1) {
             v8::String::Utf8Value currentString(v->ToString());
             currentStream << *currentString;
         } else {
-            currentStream << std::fixed << std::setprecision(precision) << v->NumberValue();
+            currentStream
+                << std::fixed
+                << std::setprecision(precision)
+                << v->NumberValue();
         }
     } else if (v->IsString()) {
         v8::String::Utf8Value currentString(v->ToString());
-        std::string string = *currentString;
+        std::string s = *currentString;
         if (escape) {
             try {
-                currentStream << this->connection->quoteString << this->connection->escape(string) << this->connection->quoteString;
+                currentStream 
+                    << this->connection->quoteString
+                    << this->connection->escape(s)
+                    << this->connection->quoteString;
             } catch(nodejs_db::Exception& exception) {
-                currentStream << this->connection->quoteString << string << this->connection->quoteString;
+                currentStream
+                    << this->connection->quoteString
+                    << s
+                    << this->connection->quoteString;
             }
         } else {
-            currentStream << string;
+            currentStream << s;
         }
     } else {
         v8::String::Utf8Value currentString(v->ToString());
-        std::string string = *currentString;
-        throw nodejs_db::Exception("Unknown type for to convert to SQL, converting `" + string + "'");
+        std::string s = *currentString;
+        throw nodejs_db::Exception(
+                "Unknown type for to convert to SQL, converting `" + s + "'");
     }
 
     return currentStream.str();
@@ -2018,10 +2061,14 @@ nodejs_db::Query::value(
 
 
 
-std::string nodejs_db::Query::fromDate(const double timeStamp) const throw(nodejs_db::Exception&) {
+std::string
+nodejs_db::Query::fromDate(
+    const double timeStamp
+) const throw(nodejs_db::Exception&) {
     char* buffer = new char[20];
     if (buffer == NULL) {
-        throw nodejs_db::Exception("Can\'t create buffer to write parsed date");
+        throw nodejs_db::Exception(
+                "Can\'t create buffer to write parsed date");
     }
 
 

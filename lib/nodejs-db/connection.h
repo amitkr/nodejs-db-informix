@@ -11,6 +11,8 @@
 namespace nodejs_db {
 class Connection {
     public:
+        static pthread_mutex_t staticConnectionLock;
+
         const char quoteString;
 
         Connection();
@@ -44,7 +46,7 @@ class Connection {
         uint32_t port;
         bool alive;
         char quoteName;
-        pthread_mutex_t connectionLock;
+        pthread_mutex_t *connectionLock;
 };
 }
 

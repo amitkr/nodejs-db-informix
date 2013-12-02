@@ -1,15 +1,16 @@
 #include "connection.h"
 
-nodejs_db::Connection::Connection()
-    :quoteString('\''),
-    alive(false),
-    quoteName('\'') {
-    pthread_mutex_init(&(this->connectionLock), NULL);
+pthread_mutex_t nodejs_db::Connection::staticConnectionLock = PTHREAD_MUTEX_INITIALIZER;
+
+nodejs_db::Connection::Connection() :
+      quoteString('\'')
+    , alive(false)
+    , quoteName('\'')
+{
+    this->connectionLock = &(this->staticConnectionLock);
 }
 
-nodejs_db::Connection::~Connection() {
-    pthread_mutex_destroy(&(this->connectionLock));
-}
+nodejs_db::Connection::~Connection() { }
 
 std::string nodejs_db::Connection::getHostname() const {
     return this->hostname;
@@ -93,9 +94,9 @@ std::string nodejs_db::Connection::escapeName(const std::string& string) const t
 }
 
 void nodejs_db::Connection::lock() {
-    pthread_mutex_lock(&(this->connectionLock));
+    pthread_mutex_lock(this->connectionLock);
 }
 
 void nodejs_db::Connection::unlock() {
-    pthread_mutex_unlock(&(this->connectionLock));
+    pthread_mutex_unlock(this->connectionLock);
 }

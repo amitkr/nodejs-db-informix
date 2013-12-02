@@ -197,7 +197,7 @@ void nodejs_db::Binding::connectFinished(connect_request_t* request) {
 
     request->context.Dispose();
 
-    // delete request;
+    delete request;
 }
 
 
@@ -208,7 +208,9 @@ void nodejs_db::Binding::uvConnect(uv_work_t* uvRequest) {
     connect_request_t* request = static_cast<connect_request_t*>(uvRequest->data);
     assert(request);
 
+    request->binding->connection->lock();
     connect(request);
+    request->binding->connection->unlock();
 }
 
 
@@ -242,7 +244,13 @@ v8::Handle<v8::Value> nodejs_db::Binding::Disconnect(const v8::Arguments& args) 
     nodejs_db::Binding* binding = node::ObjectWrap::Unwrap<nodejs_db::Binding>(args.This());
     assert(binding);
 
-    binding->connection->close();
+    try {
+        binding->connection->lock();
+        binding->connection->close();
+        binding->connection->unlock();
+    } catch(const nodejs_db::Exception& exception) {
+        binding->connection->unlock();
+    }
 
     return scope.Close(v8::Undefined());
 }

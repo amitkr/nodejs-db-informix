@@ -33,43 +33,66 @@ nodejs_db_informix::Connection::~Connection() {
     this->close();
 }
 
-void nodejs_db_informix::Connection::setCharset(const std::string& charset) throw() {
+void
+nodejs_db_informix::Connection::setCharset(
+    const std::string& charset
+) throw() {
     this->charset = charset;
 }
 
-void nodejs_db_informix::Connection::setCompress(const bool compress) throw() {
+void
+nodejs_db_informix::Connection::setCompress(const bool compress) throw() {
     this->compress = compress;
 }
 
-void nodejs_db_informix::Connection::setInitCommand(const std::string& initCommand) throw() {
+void
+nodejs_db_informix::Connection::setInitCommand(
+    const std::string& initCommand
+) throw() {
     this->initCommand = initCommand;
 }
 
-void nodejs_db_informix::Connection::setReadTimeout(const uint32_t readTimeout) throw() {
+void
+nodejs_db_informix::Connection::setReadTimeout(
+    const uint32_t readTimeout
+) throw() {
     this->readTimeout = readTimeout;
 }
 
-void nodejs_db_informix::Connection::setReconnect(const bool reconnect) throw() {
+void
+nodejs_db_informix::Connection::setReconnect(
+    const bool reconnect
+) throw() {
     this->reconnect = reconnect;
 }
 
-void nodejs_db_informix::Connection::setSocket(const std::string& socket) throw() {
+void
+nodejs_db_informix::Connection::setSocket(const std::string& socket) throw() {
     this->socket = socket;
 }
 
-void nodejs_db_informix::Connection::setSslVerifyServer(const bool sslVerifyServer) throw() {
+void
+nodejs_db_informix::Connection::setSslVerifyServer(
+    const bool sslVerifyServer
+) throw() {
     this->sslVerifyServer = sslVerifyServer;
 }
 
-void nodejs_db_informix::Connection::setTimeout(const uint32_t timeout) throw() {
+void nodejs_db_informix::Connection::setTimeout(
+    const uint32_t timeout
+) throw() {
     this->timeout = timeout;
 }
 
-void nodejs_db_informix::Connection::setWriteTimeout(const uint32_t writeTimeout) throw() {
+void
+nodejs_db_informix::Connection::setWriteTimeout(
+    const uint32_t writeTimeout
+) throw() {
     this->writeTimeout = writeTimeout;
 }
 
-bool nodejs_db_informix::Connection::isAlive(bool ping) throw() {
+bool
+nodejs_db_informix::Connection::isAlive(bool ping) throw() {
     if (this->alive) {
         this->alive = this->connection->IsOpen();
     }
@@ -188,11 +211,50 @@ nodejs_db_informix::Connection::close() {
     this->alive = false;
 }
 
+/**
+ * Escape single quotes, line feed and carriage return
+ *
+ */
 std::string
-nodejs_db_informix::Connection::escape(const std::string& s) const throw(nodejs_db::Exception&) {
-    return s;
+nodejs_db_informix::Connection::escape(const std::string& s)
+const throw(nodejs_db::Exception&) {
+    std::string result(s);
+    size_t pos = 0;
+    while (true) {
+        pos = result.find("'", pos);
+        if (pos == std::string::npos)
+            break;
+        result.insert(pos, "'");
+        // move forward
+        pos += 2;
+    }
+
+    pos = 0;
+    while (true) {
+        pos = result.find("\n", pos);
+        if (pos == std::string::npos)
+            break;
+        result.erase(pos, 1);
+        result.insert(pos, "\\n");
+    }
+
+    pos = 0;
+    while (true) {
+        pos = result.find("\r", pos);
+        if (pos == std::string::npos)
+            break;
+        result.erase(pos, 1);
+        result.insert(pos, "\\r");
+    }
+
+    return result;
 }
 
+
+
+/**
+ * Version string
+ */
 std::string
 nodejs_db_informix::Connection::version() const {
     return std::string("0.0.11");
@@ -273,7 +335,7 @@ nodejs_db_informix::Connection::query(
 
     ITSet *rs = q.ExecToSet(query.c_str());
 
-    if (rs == NULL || q.RowCount() <= 0) {
+    if (rs == NULL || q.RowCount() < 0) {
         std::stringstream err;
 
         if (q.Warn()) {
@@ -294,7 +356,7 @@ nodejs_db_informix::Connection::query(
                 ;
         }
 
-        err << "msg: Could not execute query.";
+        err << "msg: Could not execute query: " << query;
         throw nodejs_db::Exception(err.str());
     }
 

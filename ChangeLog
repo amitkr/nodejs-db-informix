@@ -39,3 +39,4 @@
 
 0.0.11
 	* removed support for libev. use lower versios for libev.
+	* merged changes proposed by pvmagacho
