@@ -224,7 +224,8 @@ nodejs_db_informix::Result::Column::getTypeName() const {
 
 
 
-nodejs_db_informix::Result::Result(ITBool b, long re) throw (nodejs_db::Exception&) :
+nodejs_db_informix::Result::Result(ITBool b, long re)
+throw (nodejs_db::Exception&) :
     columns(),
     columnNames(),
     totalColumns(0),
