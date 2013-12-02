@@ -7,11 +7,15 @@ nodejs_db_informix::Informix::Informix(): nodejs_db::Binding() {
     assert(this->connection);
 }
 
+
+
 nodejs_db_informix::Informix::~Informix() {
     if (this->connection != NULL) {
         delete this->connection;
     }
 }
+
+
 
 void nodejs_db_informix::Informix::Init(v8::Handle<v8::Object> exports) {
     v8::HandleScope scope;
@@ -26,6 +30,7 @@ void nodejs_db_informix::Informix::Init(v8::Handle<v8::Object> exports) {
     exports->Set(v8::String::NewSymbol("Informix")
             , constructorTemplate->GetFunction());
 }
+
 
 
 v8::Handle<v8::Value>
@@ -51,7 +56,10 @@ nodejs_db_informix::Informix::New(const v8::Arguments& args) {
     return scope.Close(args.This());
 }
 
-v8::Handle<v8::Value> nodejs_db_informix::Informix::set(
+
+
+v8::Handle<v8::Value>
+nodejs_db_informix::Informix::set(
     const v8::Local<v8::Object> options
 ) {
     ARG_CHECK_OBJECT_ATTR_OPTIONAL_STRING(options, hostname);
@@ -140,7 +148,11 @@ v8::Handle<v8::Value> nodejs_db_informix::Informix::set(
     return v8::Handle<v8::Value>();
 }
 
-v8::Persistent<v8::Object> nodejs_db_informix::Informix::createQuery() const {
+
+
+v8::Persistent<v8::Object>
+nodejs_db_informix::Informix::createQuery()
+const {
     v8::Persistent<v8::Object> query(
         nodejs_db_informix::Query::constructorTemplate->GetFunction()->NewInstance());
     return query;
