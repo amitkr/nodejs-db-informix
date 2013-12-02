@@ -75,7 +75,7 @@ function connect(settings) {
 
         var rs = this
                 .query(
-                      "select first 1 * from systables"
+                      "SELECT FIRST 10 * FROM systables"
                     , []
                     , function (status, results) {
                         console.log('CALLBACK:');
@@ -97,6 +97,36 @@ function connect(settings) {
                     }
                 )
                 .execute();
+
+        /*
+        var rs = this
+                .query(
+                      ""
+                    , []
+                    , function (status, results) {
+                        console.log('CALLBACK:');
+                        // console.log(arguments);
+                        console.log("status:" + status);
+                        console.log(results);
+                    }
+                    , {
+                        start: function(q) {
+                            console.log('Query:');
+                            console.log(q);
+                        }
+                        , finish: function(f) {
+                            console.log('Finish:');
+                            console.log(f);
+                        }
+                        , async: true
+                        , cast: true
+                    }
+                )
+                .select("*")
+                .first(10)
+                .from("systables", false)
+                .execute();
+        */
 
     });
 
