@@ -191,26 +191,37 @@ nodejs_db_informix::Result::Column::Column(
     }
 }
 
+
+
 nodejs_db_informix::Result::Column::~Column() {
 }
+
+
 
 bool nodejs_db_informix::Result::Column::isBinary() const {
     return this->binary;
 }
 
+
+
 std::string nodejs_db_informix::Result::Column::getName() const {
     return this->name;
 }
+
+
 
 nodejs_db::Result::Column::type_t
 nodejs_db_informix::Result::Column::getType() const {
     return this->type;
 }
 
+
+
 std::string
 nodejs_db_informix::Result::Column::getTypeName() const {
     return this->typeName;
 }
+
 
 
 nodejs_db_informix::Result::Result(ITBool b, long re) throw (nodejs_db::Exception&) :
@@ -225,6 +236,8 @@ nodejs_db_informix::Result::Result(ITBool b, long re) throw (nodejs_db::Exceptio
 {
     empty = bool(b);
 }
+
+
 
 /**
  *
@@ -269,6 +282,8 @@ nodejs_db_informix::Result::Result(ITSet* rs, const ITTypeInfo *cti, long re) th
     this->nextRow = this->row();
 }
 
+
+
 /**
  *
  *
@@ -297,22 +312,32 @@ nodejs_db_informix::Result::Result(ITSet* rs, long re) throw(nodejs_db::Exceptio
     this->nextRow = this->row();
 }
 
+
+
 nodejs_db_informix::Result::~Result() {
     this->free();
 }
 
+
+
 void nodejs_db_informix::Result::free() throw() {
     this->release();
 }
+
+
 
 void nodejs_db_informix::Result::release() throw() {
     this->columns.clear();
     this->columnNames.clear();
 }
 
+
+
 bool nodejs_db_informix::Result::hasNext() const throw() {
     return (this->nextRow != NULL);
 }
+
+
 
 std::vector<std::string>*
 nodejs_db_informix::Result::next() throw(nodejs_db::Exception&) {
@@ -327,9 +352,13 @@ nodejs_db_informix::Result::next() throw(nodejs_db::Exception&) {
     return this->previousRow;
 }
 
+
+
 unsigned long* nodejs_db_informix::Result::columnLengths() throw(nodejs_db::Exception&) {
     return this->colLengths;
 }
+
+
 
 std::vector<std::string>*
 nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
@@ -364,12 +393,16 @@ nodejs_db_informix::Result::row() throw(nodejs_db::Exception&) {
     return row;
 }
 
+
+
 uint64_t nodejs_db_informix::Result::index() const throw(std::out_of_range&) {
     if (this->rowNumber == 0) {
         throw std::out_of_range("Not standing on a row");
     }
     return (this->rowNumber - 1);
 }
+
+
 
 nodejs_db_informix::Result::Column*
 nodejs_db_informix::Result::column(uint16_t i) const throw(std::out_of_range&) {
@@ -384,21 +417,31 @@ nodejs_db_informix::Result::column(uint16_t i) const throw(std::out_of_range&) {
     return this->columns[i];
 }
 
+
+
 uint64_t nodejs_db_informix::Result::insertId() const throw() {
     return 0;
 }
+
+
 
 uint64_t nodejs_db_informix::Result::affectedCount() const throw() {
     return rowsAffected;
 }
 
+
+
 uint16_t nodejs_db_informix::Result::warningCount() const throw() {
     return 0;
 }
 
+
+
 uint16_t nodejs_db_informix::Result::columnCount() const throw() {
     return this->totalColumns;
 }
+
+
 
 uint64_t nodejs_db_informix::Result::count() const throw(nodejs_db::Exception&) {
     if (!this->isBuffered()) {
@@ -407,9 +450,13 @@ uint64_t nodejs_db_informix::Result::count() const throw(nodejs_db::Exception&) 
     return 0;
 }
 
+
+
 bool nodejs_db_informix::Result::isBuffered() const throw() {
     return true;
 }
+
+
 
 bool nodejs_db_informix::Result::isEmpty() const throw() {
     return this->empty;
