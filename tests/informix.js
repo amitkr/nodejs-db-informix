@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /* informix cli using nodejs-db-informix */
 
 var readline = require('readline'),
